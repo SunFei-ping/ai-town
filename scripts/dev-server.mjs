@@ -46,7 +46,7 @@ async function readBody(req) {
   let size = 0;
   for await (const chunk of req) {
     size += chunk.length;
-    if (size > 256 * 1024) throw new Error('E_PAYLOAD_TOO_LARGE');
+    if (size > 4 * 1024 * 1024) throw new Error('E_PAYLOAD_TOO_LARGE');
     chunks.push(chunk);
   }
   const raw = Buffer.concat(chunks).toString('utf8');
@@ -72,7 +72,12 @@ async function serveDevRuntime(res) {
 }
 
 async function serveFunction(req, res, pathname) {
-  const name = pathname.split('/')[2];
+  // 支持 /v1/<name> 与 /v1/towns/<id>/<name> 两种路由
+  const segments = pathname.split('/').filter(Boolean);
+  const isTownRoute = segments[1] === 'towns' && segments.length >= 4;
+  const name = isTownRoute ? segments[3] : segments[1];
+  const townId = isTownRoute ? decodeURIComponent(segments[2]) : undefined;
+
   if (!name || !/^[a-z0-9-]+$/.test(name)) {
     send(res, 404, 'application/json; charset=utf-8', JSON.stringify({ error: { code: 'E_INTERNAL', message: '未知接口' } }));
     return;
@@ -92,13 +97,36 @@ async function serveFunction(req, res, pathname) {
   const result = await handler({
     method: req.method,
     path: pathname,
+    townId,
     query: Object.fromEntries(url.searchParams),
     headers: req.headers,
     body: await readBody(req),
     kv,
+    env: process.env,
   });
   const headers = { 'Cache-Control': 'no-store', ...(result.headers ?? {}) };
   res.writeHead(result.status ?? 200, headers);
+
+  // SSE 等流式响应：逐帧写回，禁止缓冲
+  if (result.stream) {
+    res.flushHeaders?.();
+    const reader = result.stream.getReader();
+    res.on('close', () => {
+      if (!res.writableEnded) reader.cancel().catch(() => {});
+    });
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        res.write(Buffer.from(value));
+      }
+    } catch {
+      /* 客户端已断开 */
+    }
+    res.end();
+    return;
+  }
+
   res.end(typeof result.body === 'string' ? result.body : JSON.stringify(result.body ?? null));
 }
 

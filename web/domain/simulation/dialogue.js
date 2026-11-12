@@ -10,16 +10,18 @@ export const MAX_DIALOGUE_ROUNDS = LIMITS.MAX_DIALOGUE_ROUNDS;
 
 /**
  * 校验并归一化模型返回的轮次：
- * - 至少 1 轮，最多 6 轮（超出截断，视为自然中断）
+ * - 至少 1 轮；默认最多 6 轮（超出截断，视为自然中断）
+ * - 成本护栏降级时可传入更小的 maxRounds
  * - 每轮必须有合法的说话人与非空内容
  */
-export function normalizeTranscript(rounds, agents) {
+export function normalizeTranscript(rounds, agents, maxRounds = MAX_DIALOGUE_ROUNDS) {
   if (!Array.isArray(rounds) || rounds.length === 0) {
     fail(ERROR_CODES.E_MODEL_OUTPUT, '对话至少需要 1 轮');
   }
 
+  const limit = Math.max(1, Math.min(MAX_DIALOGUE_ROUNDS, Number(maxRounds) || MAX_DIALOGUE_ROUNDS));
   const names = new Set(agents.map((agent) => agent.name));
-  const normalized = rounds.slice(0, MAX_DIALOGUE_ROUNDS).map((round, index) => {
+  const normalized = rounds.slice(0, limit).map((round, index) => {
     const speaker = round?.speaker;
     const content = round?.content;
     if (typeof speaker !== 'string' || !names.has(speaker)) {
@@ -31,7 +33,7 @@ export function normalizeTranscript(rounds, agents) {
     return { speaker, content: content.trim() };
   });
 
-  return { rounds: normalized, truncated: rounds.length > MAX_DIALOGUE_ROUNDS };
+  return { rounds: normalized, truncated: rounds.length > limit };
 }
 
 /**
@@ -49,7 +51,11 @@ export async function generateDialogue({ model, town, encounter, initiator, part
     context,
   });
 
-  const { rounds, truncated } = normalizeTranscript(result?.rounds, [initiator, partner]);
+  const { rounds, truncated } = normalizeTranscript(
+    result?.rounds,
+    [initiator, partner],
+    context?.limits?.max_dialogue_rounds
+  );
 
   return {
     town_id: town.id,
