@@ -6,6 +6,8 @@ import * as year from './screens/year.js';
 
 const SCREENS = { home, create, town, year };
 
+let activeScreen = null;
+
 function currentRoute() {
   return resolveRoute(parseHash(window.location.hash));
 }
@@ -35,8 +37,10 @@ function render() {
   const root = document.getElementById('screen');
   if (!root || !screen) return;
 
+  activeScreen?.destroy?.();
   root.dataset.screenRoute = route;
   screen.render(root);
+  activeScreen = screen;
   syncNav(route);
   document.title = `${ROUTE_LABELS[route]} · AI小镇`;
 }

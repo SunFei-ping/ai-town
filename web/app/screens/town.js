@@ -7,6 +7,7 @@ import { runTickFromServer } from '../../infra/api/tick-runner.js';
 import { openSession, getSession, destroySession } from '../../infra/api/session.js';
 import { createRelationGraph } from '../../ui/relationGraph.js';
 import { createReportView } from '../../ui/report.js';
+import { createTownScene } from '../../ui/townScene.js';
 
 export const title = ROUTE_LABELS.town;
 
@@ -17,6 +18,22 @@ const STAGE_LABELS = {
   reflecting: '独白',
   reporting: '成稿',
 };
+
+let activeScene = null;
+
+export function destroy() {
+  activeScene?.destroy();
+  activeScene = null;
+}
+
+function parsePlan(planJson) {
+  try {
+    const plan = JSON.parse(planJson ?? '[]');
+    return Array.isArray(plan) ? plan : [];
+  } catch {
+    return [];
+  }
+}
 
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -84,6 +101,16 @@ export function render(root) {
   const modelStatus = el('p', 'muted', '当前：桩模型（不消耗 API 额度）');
   modelCard.append(modelTitle, modelHint, keyField, sessionRow, modelStatus);
 
+  const sceneCard = el('div', 'card stack town-scene-card');
+  const sceneHead = el('div', 'row');
+  const sceneTitle = el('h3', null, '小镇');
+  const replayBtn = el('button', null, '重播');
+  replayBtn.hidden = true;
+  sceneHead.append(sceneTitle, replayBtn);
+  const sceneContainer = el('div', 'town-scene');
+  sceneContainer.dataset.scene = 'town';
+  sceneCard.append(sceneHead, sceneContainer);
+
   const { list: progressList, items: progressItems } = buildProgress();
 
   const card = el('div', 'card stack');
@@ -99,7 +126,29 @@ export function render(root) {
   const reportSlot = el('div');
 
   card.append(agentLine, progressList, controls);
-  root.append(eyebrow, heading, intro, status, modelCard, card, relationSlot, reportSlot, result);
+  root.append(eyebrow, heading, intro, status, modelCard, sceneCard, card, relationSlot, reportSlot, result);
+
+  let scene = null;
+  try {
+    scene = createTownScene({ container: sceneContainer });
+    activeScene = scene;
+  } catch (err) {
+    sceneContainer.innerHTML = '';
+    const fallback = el('div', 'town-scene__fallback', `3D 场景加载失败：${err.message ?? '未知错误'}`);
+    sceneContainer.append(fallback);
+  }
+
+  let sceneData = null;
+  function setSceneData(data, { play = false } = {}) {
+    sceneData = data;
+    if (play) scene?.playDay(data);
+    else scene?.showStatic(data);
+    replayBtn.hidden = !(data.plans ?? []).some((entry) => (entry.plan?.length ?? 0) > 0);
+  }
+
+  replayBtn.addEventListener('click', () => {
+    if (sceneData) scene?.playDay(sceneData);
+  });
 
   function showError(message) {
     status.textContent = message;
@@ -240,6 +289,17 @@ export function render(root) {
     refreshSessionUI();
     renderRelations();
 
+    const plans = agents.map((agent) => ({
+      agent_id: agent.id,
+      agent_name: agent.name,
+      plan: parsePlan(agent.plan_json),
+    }));
+    const dialogues =
+      town.day_index >= 1 ? await dao.listDialogues(townId, town.day_index) : [];
+    if (root.isConnected) {
+      setSceneData({ agents, plans, dialogues, day: town.day_index }, { play: false });
+    }
+
     const latest = town.day_index >= 1 ? await dao.getReport(townId, town.day_index) : null;
     if (root.isConnected) renderReport(latest);
   }
@@ -276,6 +336,17 @@ export function render(root) {
 
       renderOutcome(outcome);
       await refresh();
+      if (root.isConnected) {
+        setSceneData(
+          {
+            agents,
+            plans: outcome.plans,
+            dialogues: outcome.dialogues,
+            day: outcome.town.day_index,
+          },
+          { play: true }
+        );
+      }
     } catch (err) {
       if (err.code === 'E_NO_SESSION') {
         await destroySession();

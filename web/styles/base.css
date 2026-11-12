@@ -441,6 +441,84 @@ button.primary:hover {
   line-height: var(--leading-loose);
 }
 
+/* ---------- 小镇 3D 场景 ---------- */
+
+.town-scene-card .row {
+  justify-content: space-between;
+}
+
+.town-scene {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-deep);
+  touch-action: none;
+}
+
+.town-scene canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.town-scene__hud,
+.town-scene__hint {
+  position: absolute;
+  pointer-events: none;
+  font-size: var(--text-xs);
+}
+
+.town-scene__hud {
+  top: var(--space-2);
+  left: var(--space-3);
+  padding: 2px var(--space-2);
+  border: 1px solid var(--color-line);
+  border-radius: 999px;
+  background: var(--color-surface);
+  color: var(--color-ink-soft);
+}
+
+.town-scene__hint {
+  right: var(--space-3);
+  bottom: var(--space-2);
+  color: var(--color-ink-faint);
+}
+
+.town-scene__bubble {
+  position: absolute;
+  left: 50%;
+  bottom: var(--space-4);
+  transform: translateX(-50%);
+  max-width: calc(100% - var(--space-6));
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  box-shadow: var(--shadow-2);
+  font-size: var(--text-sm);
+}
+
+.town-scene__fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: var(--space-4);
+  text-align: center;
+  color: var(--color-ink-faint);
+  font-size: var(--text-sm);
+}
+
+@media (min-width: 768px) {
+  .town-scene {
+    height: 360px;
+  }
+}
+
 /* ---------- 示例小镇 ---------- */
 
 .sample-town {
