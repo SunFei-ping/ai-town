@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  buildMessages,
   createModelAdapter,
   createRedactedLogger,
   extractJson,
@@ -51,6 +52,29 @@ describe('模型适配层（model-adapter）', () => {
   it('允许 Markdown 代码围栏', () => {
     const parsed = extractJson('```json\n{"text":"一句话"}\n```');
     expect(parsed.text).toBe('一句话');
+  });
+
+  it('计划提示包含公共地点与其他居民，减少各写各的', () => {
+    const messages = buildMessages({
+      stage: 'plan',
+      agent: { name: '陈望', occupation: '五金店老板' },
+      context: {
+        agents: [
+          { name: '陈望', occupation: '五金店老板' },
+          { name: '林小满', occupation: '咖啡店老板' },
+        ],
+        relations: [],
+        limits: { max_dialogue_rounds: 6 },
+      },
+      day: 1,
+      town: { name: '测试镇', day_index: 1 },
+    });
+    const text = messages.map((message) => message.content).join('\n');
+
+    expect(text).toContain('公共地点');
+    expect(text).toContain('码头');
+    expect(text).toContain('林小满');
+    expect(text).toContain('不要写');
   });
 
   it('解析失败返回 E_MODEL_OUTPUT', async () => {

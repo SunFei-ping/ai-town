@@ -4,6 +4,8 @@ import {
   buildTimeline,
   resolveEncounters,
   collectEncounters,
+  normalizeLocation,
+  ensureDailyEncounter,
 } from '../../../web/domain/simulation/encounter.js';
 
 function makeAgents(count) {
@@ -57,6 +59,80 @@ describe('位置推进与相遇（encounter）', () => {
       { agent_id: 'agent_1', plan: plan([[7, '学校']]) },
     ];
     expect(collectEncounters({ agents, plans }).encounters).toHaveLength(0);
+  });
+
+  it('同一地点的不同写法归一化到同一地点', () => {
+    expect(normalizeLocation('五金店卷帘门前')).toBe('五金店');
+    expect(normalizeLocation('五金店柜台后')).toBe('五金店');
+    expect(normalizeLocation('镇口面馆')).toBe('面馆');
+    expect(normalizeLocation('镇上国道边的面馆')).toBe('面馆');
+    expect(normalizeLocation('镇口早点摊')).toBe('早餐摊');
+    expect(normalizeLocation('巷口早餐摊')).toBe('早餐摊');
+    expect(normalizeLocation('镇口菜摊')).toBe('菜市场');
+    expect(normalizeLocation('学校操场边')).toBe('学校');
+    expect(normalizeLocation('自家小院')).toBe('小院');
+    expect(normalizeLocation('自家客厅')).toBe('客厅');
+  });
+
+  it('地点写法不同但归一化后相同，仍触发相遇', () => {
+    const agents = makeAgents(2);
+    const plans = [
+      { agent_id: 'agent_0', plan: plan([[7, '五金店卷帘门前']]) },
+      { agent_id: 'agent_1', plan: plan([[8, '五金店柜台后']]) },
+    ];
+
+    const { encounters } = collectEncounters({ agents, plans });
+    expect(encounters).toHaveLength(1);
+    expect(encounters[0]).toMatchObject({
+      hour: 8,
+      initiator_id: 'agent_0',
+      participant_ids: ['agent_0', 'agent_1'],
+    });
+  });
+
+  it('归一化后仍不同的私密地点不合并', () => {
+    const agents = makeAgents(2);
+    const plans = [
+      { agent_id: 'agent_0', plan: plan([[7, '自家小院']]) },
+      { agent_id: 'agent_1', plan: plan([[7, '自家客厅']]) },
+    ];
+    expect(collectEncounters({ agents, plans }).encounters).toHaveLength(0);
+  });
+
+  it('不同居民的「家」不会被当成同一个地点', () => {
+    const agents = makeAgents(2);
+    const plans = [
+      { agent_id: 'agent_0', plan: plan([[7, '家']]) },
+      { agent_id: 'agent_1', plan: plan([[7, '家']]) },
+    ];
+    expect(collectEncounters({ agents, plans }).encounters).toHaveLength(0);
+  });
+
+  it('完全没有交集时补一段公共相遇，保证当天有内容可写', () => {
+    const agents = makeAgents(2);
+    const plans = [
+      { agent_id: 'agent_0', plan: plan([[7, '自家小院']]) },
+      { agent_id: 'agent_1', plan: plan([[7, '自家客厅']]) },
+    ];
+
+    const ensured = ensureDailyEncounter({ agents, plans, hour: 12 });
+    expect(ensured.injected).toBe(true);
+    expect(ensured.encounters.length).toBeGreaterThanOrEqual(1);
+    expect(ensured.encounters[0]).toMatchObject({ hour: 12, location: '街口' });
+    expect(ensured.plans[0].plan.some((item) => item.hour === 12)).toBe(true);
+    expect(ensured.plans[1].plan.some((item) => item.hour === 12)).toBe(true);
+  });
+
+  it('已有相遇时不额外补计划', () => {
+    const agents = makeAgents(2);
+    const plans = [
+      { agent_id: 'agent_0', plan: plan([[7, '码头']]) },
+      { agent_id: 'agent_1', plan: plan([[7, '码头']]) },
+    ];
+
+    const ensured = ensureDailyEncounter({ agents, plans });
+    expect(ensured.injected).toBe(false);
+    expect(ensured.plans).toBe(plans);
   });
 
   it('单小时第 3 段起记为擦肩而过', () => {

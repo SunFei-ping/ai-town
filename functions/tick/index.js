@@ -9,7 +9,7 @@ import { generatePlans } from '../../web/domain/agent/plan.js';
 import { generateUnsay } from '../../web/domain/agent/unsay.js';
 import { ensureUnsays } from '../../web/domain/report/unsay.js';
 import { buildReport } from '../../web/domain/report/builder.js';
-import { collectEncounters } from '../../web/domain/simulation/encounter.js';
+import { ensureDailyEncounter } from '../../web/domain/simulation/encounter.js';
 import { generateDialogue } from '../../web/domain/simulation/dialogue.js';
 import { guardDialogue, guardText } from '../../web/domain/memory/secretGuard.js';
 import { planRelationUpdates } from '../../web/domain/relation/rules.js';
@@ -182,7 +182,7 @@ export async function runTick({
   machine.to('validating');
   machine.to('planning');
 
-  const plans = await generatePlans({
+  const generatedPlans = await generatePlans({
     model: metered,
     town,
     agents,
@@ -193,6 +193,10 @@ export async function runTick({
       emit('warning', warning);
     },
   });
+  // §12.3：保证当天至少有一段相遇，否则小报没有任何关系变化可写
+  const planned = ensureDailyEncounter({ agents, plans: generatedPlans });
+  const plans = planned.plans;
+
   for (const entry of plans) {
     if (entry.degraded) degraded = true;
     emit('planning', { agent_id: entry.agent_id, plan: entry.plan });
@@ -200,7 +204,7 @@ export async function runTick({
 
   machine.to('simulating');
 
-  const { encounters } = collectEncounters({ agents, plans });
+  const encounters = planned.encounters;
   const dialogues = [];
 
   for (const encounter of encounters) {

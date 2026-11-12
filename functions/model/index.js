@@ -151,6 +151,11 @@ export function buildMessages(input) {
     '用简体中文，内容具体、克制、有生活质感。不得直接复述任何居民的 secret 原文。';
 
   if (stage === 'plan') {
+    const others = (context?.agents ?? [])
+      .filter((item) => item?.name && item.name !== agent?.name)
+      .map((item) => `${item.name}（${item.occupation}）`)
+      .join('、');
+    const publicPlaces = ['码头', '菜市场', '面馆', '小卖部', '学校门口', '街口'];
     return [
       { role: 'system', content: system },
       {
@@ -158,9 +163,13 @@ export function buildMessages(input) {
         content:
           `为居民生成一天的安排。\n` +
           `居民：${JSON.stringify(profileOf(agent))}\n` +
+          `其他居民：${others || '无'}\n` +
+          `公共地点：${publicPlaces.join('、')}\n` +
           `背景：${JSON.stringify({ ...base, relations: context?.relations ?? [] })}\n` +
           `记忆：${JSON.stringify(agent?.memories ?? {})}\n` +
-          '要求：3–6 个时间段，hour 取 6–22 的整数，location 为具体地点，intent 一句话。\n' +
+          '要求：3–6 个时间段，hour 取 6–22 的整数，intent 一句话；' +
+          '只安排一个时间段去公共地点，其余时间在自己的常驻地点（如五金店、咖啡店）；' +
+          'location 用公共地点或常驻地点，不要写「柜台后」「卷帘门前」这类过细位置。\n' +
           '输出结构：{"plan":[{"hour":7,"location":"五金店","intent":"开门营业"}]}',
       },
     ];
