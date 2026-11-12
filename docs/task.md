@@ -719,7 +719,7 @@ Q1、Q2 仍是唯一可能影响里程碑门槛的外部变量。
 | 待复测 | 本地桩链路通过，真实模型或远端环境尚未验证 |
 | 阻塞 | 依赖外部凭据，无法在本地完成 |
 
-最近一次本地验证：`check:structure`、`check:tokens`、`test:contract`（48 条）、`test:unit`（86 条）、`test:integration`（60 条）全部通过；`test:e2e` 最近一次全量运行通过。
+最近一次本地验证：`check:structure`、`check:tokens`、`test:contract`（48 条）、`test:unit`（91 条）、`test:integration`（60 条）全部通过；`test:e2e` 18 条全量通过。
 
 ### 9.2 里程碑状态
 
