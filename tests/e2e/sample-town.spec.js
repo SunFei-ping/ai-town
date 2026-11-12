@@ -5,7 +5,10 @@ test('sample-town-offline：断网浏览示例小镇 7 天，零模型调用', a
   const modelRequests = [];
 
   page.on('request', (request) => {
-    if (/\/v1\//.test(request.url())) modelRequests.push(request.url());
+    // /v1/health 是启动时的版本兼容探测，不属于模型调用
+    if (/\/v1\//.test(request.url()) && !/\/v1\/health/.test(request.url())) {
+      modelRequests.push(request.url());
+    }
   });
 
   await page.route('**/*', (route) => {

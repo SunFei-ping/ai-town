@@ -14,6 +14,8 @@
     "test:e2e": "playwright test",
     "smoke": "node scripts/smoke.mjs",
     "smoke:remote": "node scripts/smoke.mjs --remote",
+    "deploy:preview": "node scripts/deploy.mjs --env preview",
+    "deploy:prod": "node scripts/deploy.mjs --env production",
     "metrics": "node scripts/metrics.mjs"
   },
   "devDependencies": {

@@ -38,10 +38,10 @@ function renderUnsays(list, unsays) {
 }
 
 /**
- * @param {{ report: object, townName?: string }} options
+ * @param {{ report: object, townName?: string, onShare?: Function }} options
  * @returns {HTMLElement}
  */
-export function createReportView({ report, townName = '' }) {
+export function createReportView({ report, townName = '', onShare }) {
   const article = el('article', 'report');
   article.dataset.day = String(report.day);
 
@@ -69,6 +69,29 @@ export function createReportView({ report, townName = '' }) {
     for (const paragraph of paragraphs(section.body)) block.append(paragraph);
     if (section.kind === 'unsaid') renderUnsays(block, report.unsays ?? []);
     article.append(block);
+  }
+
+  if (typeof onShare === 'function') {
+    const footer = el('footer', 'report__footer');
+    const share = el('button', 'report__share', '保存分享图');
+    share.dataset.action = 'share-report';
+    share.addEventListener('click', async () => {
+      share.disabled = true;
+      share.textContent = '生成中…';
+      try {
+        await onShare(report);
+        share.textContent = '已生成';
+      } catch (err) {
+        share.textContent = err?.message ?? '生成失败';
+      } finally {
+        share.disabled = false;
+        setTimeout(() => {
+          if (share.isConnected) share.textContent = '保存分享图';
+        }, 1600);
+      }
+    });
+    footer.append(share);
+    article.append(footer);
   }
 
   return article;

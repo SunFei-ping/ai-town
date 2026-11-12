@@ -81,8 +81,9 @@ export async function listAgents(townId) {
 
 /**
  * C2：day_index 单调不减，且不超过 7。
+ * `lastTickAt` 供真实时间补算使用：按虚拟时间推进，保留剩余可补算天数。
  */
-export async function updateTownDay(townId, nextDay) {
+export async function updateTownDay(townId, nextDay, { lastTickAt } = {}) {
   const town = await getTown(townId);
   assert(Number.isInteger(nextDay), '天数必须是整数');
   if (nextDay < town.day_index) {
@@ -94,7 +95,7 @@ export async function updateTownDay(townId, nextDay) {
   const updated = {
     ...town,
     day_index: nextDay,
-    last_tick_at: Date.now(),
+    last_tick_at: Number.isFinite(lastTickAt) ? lastTickAt : Date.now(),
     status: nextDay >= LIMITS.DAYS_PER_TOWN ? 'completed' : 'running',
   };
   await db.put('town', updated);

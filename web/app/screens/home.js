@@ -1,6 +1,7 @@
 import { ROUTE_LABELS } from '../routes.js';
 import { loadSampleTown } from '../../infra/api/sample-town.js';
 import { createReportView } from '../../ui/report.js';
+import { exportShareImage } from '../../infra/share/index.js';
 
 export const title = ROUTE_LABELS.home;
 
@@ -33,7 +34,13 @@ function renderSampleTown(container) {
 
       const show = (report) => {
         view.innerHTML = '';
-        view.append(createReportView({ report, townName: town.name }));
+        view.append(
+          createReportView({
+            report,
+            townName: town.name,
+            onShare: (current) => exportShareImage({ report: current, townName: town.name }),
+          })
+        );
         for (const [day, button] of buttons) {
           button.setAttribute('aria-pressed', String(day === report.day));
         }

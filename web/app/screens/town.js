@@ -1,13 +1,23 @@
 import { ROUTE_LABELS } from '../routes.js';
 import * as dao from '../../infra/storage/dao.js';
-import { getCurrentTownId, clearCurrentTownId } from '../../infra/storage/app-state.js';
+import { getCurrentTownId, clearCurrentTownId, setCurrentTownId } from '../../infra/storage/app-state.js';
 import { runDay } from '../../domain/simulation/day.js';
 import { createStubModel } from '../../infra/api/stub-model.js';
 import { runTickFromServer } from '../../infra/api/tick-runner.js';
+import { submitEvent } from '../../infra/api/events.js';
 import { openSession, getSession, destroySession } from '../../infra/api/session.js';
 import { createRelationGraph } from '../../ui/relationGraph.js';
 import { createReportView } from '../../ui/report.js';
+import { createEventComposer } from '../../ui/eventComposer.js';
 import { createTownScene } from '../../ui/townScene.js';
+import { exportShareImage } from '../../infra/share/index.js';
+import {
+  downloadText,
+  exportTownJson,
+  exportTownMarkdown,
+  importTownJson,
+} from '../../infra/storage/export.js';
+import { computeBackfillPlan, runBackfill } from '../../domain/simulation/backfill.js';
 
 export const title = ROUTE_LABELS.town;
 
@@ -101,6 +111,10 @@ export function render(root) {
   const modelStatus = el('p', 'muted', '当前：桩模型（不消耗 API 额度）');
   modelCard.append(modelTitle, modelHint, keyField, sessionRow, modelStatus);
 
+  const eventSlot = el('div');
+  const composer = createEventComposer({ onSubmit: saveEvent });
+  eventSlot.append(composer.element);
+
   const sceneCard = el('div', 'card stack town-scene-card');
   const sceneHead = el('div', 'row');
   const sceneTitle = el('h3', null, '小镇');
@@ -126,8 +140,48 @@ export function render(root) {
   const relationSlot = el('div');
   const reportSlot = el('div');
 
+  const backfillCard = el('div', 'card stack');
+  backfillCard.hidden = true;
+  backfillCard.dataset.component = 'backfill';
+  const backfillText = el('p', 'muted');
+  const backfillContinue = el('button', 'primary', '继续补算');
+  backfillCard.append(el('h3', null, '真实时间补算'), backfillText, backfillContinue);
+
+  const dataCard = el('div', 'card stack');
+  dataCard.dataset.component = 'town-data';
+  dataCard.append(el('h3', null, '小镇数据'));
+  dataCard.append(
+    el('p', 'muted', '导出后可以在任意设备回导继续推进；town.md 可以直接当故事读。')
+  );
+  const dataRow = el('div', 'row');
+  const exportJsonBtn = el('button', null, '导出 town.json');
+  const exportMdBtn = el('button', null, '导出 town.md');
+  const importBtn = el('button', null, '导入 town.json');
+  const importInput = el('input');
+  importInput.type = 'file';
+  importInput.accept = 'application/json,.json';
+  importInput.hidden = true;
+  const dataStatus = el('p', 'notice');
+  dataStatus.hidden = true;
+  dataRow.append(exportJsonBtn, exportMdBtn, importBtn);
+  dataCard.append(dataRow, importInput, dataStatus);
+
   card.append(agentLine, progressList, controls);
-  root.append(eyebrow, heading, intro, status, modelCard, sceneCard, card, relationSlot, reportSlot, result);
+  root.append(
+    eyebrow,
+    heading,
+    intro,
+    status,
+    modelCard,
+    eventSlot,
+    sceneCard,
+    card,
+    backfillCard,
+    dataCard,
+    relationSlot,
+    reportSlot,
+    result
+  );
 
   let scene = null;
   const sceneChipsById = new Map();
@@ -201,6 +255,85 @@ export function render(root) {
   let agents = [];
   let relations = [];
   let session = getSession();
+  let advancing = false;
+
+  function showDataStatus(message) {
+    dataStatus.textContent = message;
+    dataStatus.hidden = false;
+  }
+
+  /** M6-02：投递当天事件。有会话时先过服务端校验，再写本地。 */
+  async function saveEvent({ type, payload }) {
+    const day = town.day_index + 1;
+    if (day > 7) throw new Error('这一周已经结束，不能再投递事件');
+
+    const currentSession = getSession();
+    let remote = null;
+    if (currentSession) {
+      remote = await submitEvent({
+        townId,
+        day,
+        type,
+        payload,
+        sessionToken: currentSession.session_token,
+      });
+    }
+
+    return dao.addEvent({
+      town_id: townId,
+      day,
+      type,
+      payload,
+      source: 'user',
+      created_at: remote?.created_at ?? Date.now(),
+    });
+  }
+
+  exportJsonBtn.addEventListener('click', async () => {
+    exportJsonBtn.disabled = true;
+    try {
+      const file = await exportTownJson(townId);
+      downloadText(file.filename, file.content, 'application/json;charset=utf-8');
+      showDataStatus(`已导出 ${file.filename}`);
+    } catch (err) {
+      showDataStatus(err.message ?? '导出失败');
+    } finally {
+      exportJsonBtn.disabled = false;
+    }
+  });
+
+  exportMdBtn.addEventListener('click', async () => {
+    exportMdBtn.disabled = true;
+    try {
+      const file = await exportTownMarkdown(townId);
+      downloadText(file.filename, file.content, 'text/markdown;charset=utf-8');
+      showDataStatus(`已导出 ${file.filename}`);
+    } catch (err) {
+      showDataStatus(err.message ?? '导出失败');
+    } finally {
+      exportMdBtn.disabled = false;
+    }
+  });
+
+  importBtn.addEventListener('click', () => importInput.click());
+
+  importInput.addEventListener('change', async () => {
+    const file = importInput.files?.[0];
+    if (!file) return;
+    importBtn.disabled = true;
+    try {
+      const text = await file.text();
+      const imported = await importTownJson(text);
+      setCurrentTownId(imported.id);
+      showDataStatus(`已导入 ${imported.name}，正在重新加载`);
+      window.location.reload();
+    } catch (err) {
+      showDataStatus(err.message ?? '导入失败');
+      importBtn.disabled = false;
+    } finally {
+      importInput.value = '';
+    }
+  });
 
   function refreshSessionUI() {
     session = getSession();
@@ -259,7 +392,14 @@ export function render(root) {
     if (!report) return;
     const box = el('div', 'card stack');
     box.append(el('h3', null, '今日小报'));
-    box.append(createReportView({ report, townName: town?.name ?? '' }));
+    box.append(
+      createReportView({
+        report,
+        townName: town?.name ?? '',
+        onShare: (current) =>
+          exportShareImage({ report: current, townName: town?.name ?? '' }),
+      })
+    );
     reportSlot.append(box);
   }
 
@@ -307,11 +447,20 @@ export function render(root) {
     eyebrow.textContent = `第 ${town.day_index} 天`;
     agentLine.textContent = agents.map((a) => `${a.name}（${a.occupation}）`).join(' · ');
     const finished = town.day_index >= 7;
-    nextBtn.disabled = finished;
+    nextBtn.disabled = finished || advancing;
     nextBtn.textContent = finished ? '这一周结束了' : '过一天';
     if (finished) markStage('reporting');
     refreshSessionUI();
     renderRelations();
+
+    const nextDay = town.day_index + 1;
+    const nextEvents = nextDay <= 7 ? await dao.listEvents(townId, nextDay) : [];
+    const submittedEvent = nextEvents.find((event) => event.source === 'user') ?? null;
+    composer.update({
+      day: finished ? null : nextDay,
+      existing: submittedEvent,
+      disabled: finished,
+    });
 
     const plans = agents.map((agent) => ({
       agent_id: agent.id,
@@ -329,7 +478,8 @@ export function render(root) {
   }
 
   nextBtn.addEventListener('click', async () => {
-    if (!town || nextBtn.disabled) return;
+    if (!town || nextBtn.disabled || advancing) return;
+    advancing = true;
     nextBtn.disabled = true;
     status.hidden = true;
     resetProgress();
@@ -337,6 +487,7 @@ export function render(root) {
     if (agents.length !== 5) {
       showError('小镇必须恰好五个居民');
       nextBtn.disabled = false;
+      advancing = false;
       return;
     }
 
@@ -380,7 +531,93 @@ export function render(root) {
         showError(err.message ?? '推进失败');
       }
       nextBtn.disabled = false;
+    } finally {
+      advancing = false;
+      if (town) nextBtn.disabled = town.day_index >= 7;
     }
+  });
+
+  /**
+   * M6-05：真实时间模式回到页面时补算。
+   * 单批最多 2 天，每天完成立即落盘并渲染；未补完的天数留到下次继续。
+   */
+  async function maybeBackfill() {
+    if (advancing || !town || town.pace_mode !== 'realtime' || town.status !== 'running') return;
+    const plan = computeBackfillPlan({ town });
+    if (plan.unlocked <= 0) {
+      backfillCard.hidden = true;
+      return;
+    }
+
+    advancing = true;
+    nextBtn.disabled = true;
+    backfillCard.hidden = false;
+    backfillText.textContent = `离开了一段时间，可补算 ${plan.unlocked} 天。本次最多补 ${plan.batch} 天，完成一天就先保存。`;
+
+    try {
+      const result = await runBackfill({
+        town,
+        advanceDay: async ({ town: current, day, lastTickAt }) => {
+          const currentAgents = await dao.listAgents(townId);
+          const currentSession = getSession();
+          if (currentSession) {
+            return runTickFromServer({
+              town: current,
+              agents: currentAgents,
+              day,
+              sessionToken: currentSession.session_token,
+              generationMode: 'backfill',
+              lastTickAt,
+              onStage: markStage,
+            });
+          }
+          return runDay({
+            town: current,
+            agents: currentAgents,
+            day,
+            model: createStubModel(),
+            generationMode: 'backfill',
+            lastTickAt,
+            onStage: markStage,
+          });
+        },
+        onWarning: (warning) => {
+          backfillText.textContent = warning.message;
+        },
+        onDayDone: async (outcome) => {
+          renderOutcome(outcome);
+          await refresh();
+          if (root.isConnected) {
+            setSceneData(
+              {
+                agents,
+                plans: outcome.plans,
+                dialogues: outcome.dialogues,
+                day: outcome.town.day_index,
+              },
+              { play: true }
+            );
+          }
+        },
+      });
+
+      if (result.remaining > 0) {
+        backfillCard.hidden = false;
+        backfillText.textContent = `本次已补 ${result.completed} 天，还有 ${result.remaining} 天。可以继续补算，或下次打开时自动继续。`;
+      } else {
+        backfillCard.hidden = true;
+      }
+    } catch (err) {
+      backfillCard.hidden = false;
+      backfillText.textContent = `补算中断：${err.message ?? '未知错误'}。已完成的天已经保存，下次打开会继续。`;
+    } finally {
+      advancing = false;
+      if (town) nextBtn.disabled = town.day_index >= 7;
+    }
+  }
+
+  backfillContinue.addEventListener('click', () => {
+    maybeBackfill();
   });
 
   resetBtn.addEventListener('click', async () => {
@@ -396,6 +633,7 @@ export function render(root) {
     try {
       await refresh();
       if (root.isConnected) nextBtn.disabled = town.day_index >= 7;
+      if (root.isConnected) maybeBackfill();
     } catch (err) {
       showError(err.message ?? '读取小镇失败');
     }

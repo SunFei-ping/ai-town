@@ -4,6 +4,8 @@ export default defineConfig({
   testDir: './tests/e2e',
   timeout: 20000,
   fullyParallel: false,
+  // 3D 场景与 Canvas 出图对 GPU/CPU 敏感，串行执行避免相互拖慢导致超时
+  workers: 1,
   reporter: [['list']],
   use: {
     baseURL: 'http://127.0.0.1:4183',

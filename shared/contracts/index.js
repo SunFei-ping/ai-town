@@ -137,3 +137,25 @@ export const CONTRACTS = Object.freeze({
   version: SCHEMA_VERSION,
   apiVersion: API_VERSION,
 });
+
+/** 解析 `主.次.补丁`；格式不合法返回 null */
+export function parseSchemaVersion(version) {
+  const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(String(version ?? ''));
+  if (!match) return null;
+  return {
+    major: Number(match[1]),
+    minor: Number(match[2]),
+    patch: Number(match[3]),
+  };
+}
+
+/**
+ * 静态资源与函数的版本兼容判定，见 SPCD §13.4。
+ * 主版本与次版本一致才兼容；补丁号差异不影响数据结构。
+ */
+export function isSchemaCompatible(localVersion, remoteVersion) {
+  const local = parseSchemaVersion(localVersion);
+  const remote = parseSchemaVersion(remoteVersion);
+  if (!local || !remote) return false;
+  return local.major === remote.major && local.minor === remote.minor;
+}

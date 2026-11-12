@@ -1,0 +1,37 @@
+# Cloudflare 部署配置，见 SPCD §13 与 task.md M6-07。
+# 静态资源由 Pages 托管（web/），函数由 Workers 托管（functions/worker.js）。
+# 真实 KV 命名空间 id 通过 `npx wrangler kv namespace create AI_TOWN_KV` 获取后填入。
+
+name = "ai-town-api"
+main = "functions/worker.js"
+compatibility_date = "2025-01-01"
+
+[vars]
+MODEL_MODE = "live"
+MODEL_NAME = "deepseek-chat"
+
+[[kv_namespaces]]
+binding = "AI_TOWN_KV"
+id = "REPLACE_WITH_PRODUCTION_KV_ID"
+
+[env.preview]
+name = "ai-town-api-preview"
+
+[env.preview.vars]
+MODEL_MODE = "live"
+MODEL_NAME = "deepseek-chat"
+
+[[env.preview.kv_namespaces]]
+binding = "AI_TOWN_KV"
+id = "REPLACE_WITH_PREVIEW_KV_ID"
+
+[env.production]
+name = "ai-town-api"
+
+[env.production.vars]
+MODEL_MODE = "live"
+MODEL_NAME = "deepseek-chat"
+
+[[env.production.kv_namespaces]]
+binding = "AI_TOWN_KV"
+id = "REPLACE_WITH_PRODUCTION_KV_ID"

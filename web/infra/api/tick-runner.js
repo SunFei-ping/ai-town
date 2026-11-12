@@ -40,6 +40,8 @@ export async function runTickFromServer({
   sessionToken,
   onStage,
   onWarning,
+  generationMode = 'normal',
+  lastTickAt,
   fetchImpl = globalThis.fetch,
 }) {
   const startedAt = Date.now();
@@ -111,6 +113,10 @@ export async function runTickFromServer({
   if (!report) {
     throw new AppError(ERROR_CODES.E_INTERNAL, '服务端没有返回小报');
   }
+  // 补算产生的 tick 与手动 tick 走同一套逻辑，只在落库前标记生成模式
+  if (generationMode === 'backfill' && report.generation_mode !== 'degraded') {
+    report.generation_mode = 'backfill';
+  }
 
   // 计划写回 AGENT
   const planByAgent = new Map(plans.map((entry) => [entry.agent_id, entry.plan]));
@@ -158,7 +164,7 @@ export async function runTickFromServer({
     await dao.saveReport(report);
   }
 
-  const updatedTown = await dao.updateTownDay(town.id, day);
+  const updatedTown = await dao.updateTownDay(town.id, day, { lastTickAt });
   const dayStatus = report.generation_mode === 'degraded' ? 'partial' : 'done';
   await dao.putDayState({
     town_id: town.id,

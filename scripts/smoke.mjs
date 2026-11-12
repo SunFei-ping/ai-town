@@ -9,6 +9,7 @@
 import { spawn } from 'node:child_process';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { SCHEMA_VERSION, isSchemaCompatible } from '../shared/contracts/index.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
@@ -180,7 +181,18 @@ async function checkRemote() {
     console.error(`  ✗ remote-health：状态码 ${res.status}`);
     process.exit(1);
   }
-  console.log('  ✓ remote-health');
+  const data = await res.json().catch(() => null);
+  if (data?.ok !== true) {
+    console.error('  ✗ remote-health：未返回 ok=true');
+    process.exit(1);
+  }
+  if (!isSchemaCompatible(SCHEMA_VERSION, data?.version)) {
+    console.error(
+      `  ✗ remote-version：服务端 ${data?.version ?? '未知'} 与前端 ${SCHEMA_VERSION} 不兼容`
+    );
+    process.exit(1);
+  }
+  console.log(`  ✓ remote-health（version ${data?.version}）`);
 }
 
 console.log(isRemote ? '[smoke] remote' : '[smoke] local');

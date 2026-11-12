@@ -21,7 +21,16 @@ import { LIMITS } from '../../../shared/contracts/index.js';
 
 const DEFAULT_WEATHER = '晴';
 
-export async function runDay({ town, agents, day, model, onStage, onWarning }) {
+export async function runDay({
+  town,
+  agents,
+  day,
+  model,
+  onStage,
+  onWarning,
+  generationMode = 'normal',
+  lastTickAt,
+}) {
   if (town.status !== 'running') {
     fail(ERROR_CODES.E_TOWN_STATE, '小镇当前状态不能推进');
   }
@@ -242,12 +251,12 @@ export async function runDay({ town, agents, day, model, onStage, onWarning }) {
     dialogues,
     previousRelations,
     relationUpdates,
-    generationMode: degraded ? 'degraded' : 'normal',
+    generationMode: degraded ? 'degraded' : generationMode,
   });
 
   machine.to('done');
 
-  const updatedTown = await dao.updateTownDay(town.id, day);
+  const updatedTown = await dao.updateTownDay(town.id, day, { lastTickAt });
 
   await dao.putDayState({
     town_id: town.id,

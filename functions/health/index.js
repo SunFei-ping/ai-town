@@ -8,7 +8,7 @@ const JSON_HEADERS = { 'Content-Type': 'application/json; charset=utf-8' };
  * 返回 { ok, model_reachable, latency_ms, version }
  * 不带小镇 id，见 SPCD §7.2 端点 7。
  */
-export default async function handler({ method }) {
+export default async function handler({ method, env, fetchImpl = globalThis.fetch } = {}) {
   if (method !== 'GET') {
     return {
       status: 405,
@@ -17,14 +17,15 @@ export default async function handler({ method }) {
     };
   }
 
-  const base = globalThis.process?.env?.MODEL_BASE_URL ?? '';
+  const resolvedEnv = env ?? globalThis.process?.env ?? {};
+  const base = resolvedEnv.MODEL_BASE_URL ?? '';
   let modelReachable = false;
   let latencyMs = 0;
 
   if (base) {
     const started = Date.now();
     try {
-      const res = await fetch(base, { method: 'HEAD' });
+      const res = await fetchImpl(base, { method: 'HEAD' });
       modelReachable = res.status < 500;
     } catch {
       modelReachable = false;

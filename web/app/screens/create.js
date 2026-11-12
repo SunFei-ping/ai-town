@@ -38,7 +38,7 @@ export function render(root) {
   form.append(list, startBtn);
   root.append(eyebrow, heading, intro, status, form);
 
-  const state = { template: null, agents: [], templateId: null };
+  const state = { template: null, agents: [], templateId: null, paceMode: 'quick' };
 
   function showError(message) {
     status.textContent = message;
@@ -85,7 +85,24 @@ export function render(root) {
       }
     });
 
-    list.append(townField, selectField);
+    const paceField = el('div', 'field');
+    const paceLabel = el('label', null, '节奏');
+    const paceSelect = el('select', 'select');
+    for (const [value, label] of [
+      ['quick', '快进（每次点「过一天」推进一天）'],
+      ['realtime', '真实时间（一个真实日等于一天，回来时自动补算）'],
+    ]) {
+      const option = el('option', null, label);
+      option.value = value;
+      option.selected = value === state.paceMode;
+      paceSelect.append(option);
+    }
+    paceSelect.addEventListener('change', () => {
+      state.paceMode = paceSelect.value;
+    });
+    paceField.append(paceLabel, paceSelect);
+
+    list.append(townField, selectField, paceField);
 
     state.agents.forEach((agent, index) => {
       const card = el('div', 'agent-card');
@@ -144,7 +161,7 @@ export function render(root) {
         {
           name: state.townNameInput?.value?.trim() || 'AI小镇',
           templateId: state.templateId,
-          paceMode: 'quick',
+          paceMode: state.paceMode,
         },
         collect()
       );
