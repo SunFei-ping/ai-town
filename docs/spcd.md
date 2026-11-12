@@ -566,7 +566,7 @@ erDiagram
 - `DAILY_REPORT.generation_mode` ∈ `normal` / `backfill` / `degraded`
 - `REPORT_SECTION.kind` ∈ `headline` / `scene` / `relation` / `unsaid`
 - `UNSAY` 每份小报固定 5 条，与 5 个居民一一对应
-- `USAGE` 每次模型调用一条，用于验收 V5；`stage` ∈ `plan` / `dialogue` / `unsay` / `report`
+- `USAGE` 每次模型调用一条，用于验收 V5；`stage` ∈ `plan` / `dialogue` / `unsay` / `report`。C5 检测另在同一行记录 `secret_hits`（泄露判定次数）与 `secret_rewrites`（重写次数），未命中时为 0
 
 ### 6.3 索引
 
