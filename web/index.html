@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI小镇</title>
+    <link rel="stylesheet" href="./styles/tokens.css" />
+    <link rel="stylesheet" href="./styles/base.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <nav class="app-nav" aria-label="主导航">
+        <span class="app-nav__brand">AI小镇</span>
+        <a class="app-nav__link" data-route="home" href="#/home">首页</a>
+        <a class="app-nav__link" data-route="create" href="#/create">建镇</a>
+        <a class="app-nav__link" data-route="town" href="#/town">小镇</a>
+        <a class="app-nav__link" data-route="year" href="#/year">年报</a>
+      </nav>
+      <main id="screen" class="screen" aria-live="polite"></main>
+    </div>
+    <script type="module" src="./app/router.js"></script>
+  </body>
+</html>

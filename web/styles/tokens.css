@@ -1,0 +1,61 @@
+:root {
+  /* ---- 颜色：纸感底 + 墨色字 + 海蓝点缀 ---- */
+  --color-bg: hsl(42 34% 96%);
+  --color-bg-deep: hsl(42 26% 92%);
+  --color-surface: hsl(0 0% 100%);
+  --color-ink: hsl(220 14% 16%);
+  --color-ink-soft: hsl(220 8% 42%);
+  --color-ink-faint: hsl(220 6% 62%);
+  --color-line: hsl(40 14% 84%);
+  --color-accent: hsl(202 46% 36%);
+  --color-accent-soft: hsl(202 42% 92%);
+  --color-warn: hsl(12 60% 46%);
+  --color-ok: hsl(152 38% 32%);
+
+  /* ---- 字体 ---- */
+  --font-display: "Noto Serif SC", "Songti SC", "SimSun", serif;
+  --font-body: "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+
+  /* ---- 字号 ---- */
+  --text-xs: 12px;
+  --text-sm: 14px;
+  --text-base: 16px;
+  --text-lg: 20px;
+  --text-xl: 26px;
+  --text-2xl: 34px;
+  --text-3xl: 46px;
+
+  /* ---- 行高 ---- */
+  --leading-tight: 1.25;
+  --leading-normal: 1.6;
+  --leading-loose: 1.85;
+
+  /* ---- 间距 ---- */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* ---- 圆角 ---- */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 16px;
+
+  /* ---- 阴影 ---- */
+  --shadow-1: 0 1px 2px hsl(220 20% 12% / 0.06);
+  --shadow-2: 0 8px 24px hsl(220 20% 12% / 0.10);
+
+  /* ---- 版心 ---- */
+  --measure: 68ch;
+  --shell-max: 720px;
+
+  /* ---- 断点（供 base.css 的 media query 引用，见 docs/spcd.md §4） ---- */
+  --bp-mobile: 375px;
+  --bp-tablet: 768px;
+  --bp-desktop: 1280px;
+}
