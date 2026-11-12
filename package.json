@@ -1,0 +1,23 @@
+{
+  "name": "ai-town",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "AI小镇：只能围观、不能指挥的 AI 小镇",
+  "scripts": {
+    "dev": "node scripts/dev-server.mjs",
+    "check:structure": "node scripts/check-structure.mjs",
+    "check:tokens": "node scripts/check-tokens.mjs",
+    "test:unit": "node scripts/run-tests.mjs unit",
+    "test:contract": "node scripts/run-tests.mjs contract",
+    "test:integration": "node scripts/run-tests.mjs integration",
+    "test:e2e": "playwright test",
+    "smoke": "node scripts/smoke.mjs",
+    "smoke:remote": "node scripts/smoke.mjs --remote"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.0",
+    "fake-indexeddb": "^6.2.8",
+    "vitest": "^5.1.0"
+  }
+}

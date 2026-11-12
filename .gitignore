@@ -1,0 +1,25 @@
+# 依赖
+node_modules/
+
+# 测试与运行产物
+test-results/
+playwright-report/
+blob-report/
+.screenshots/
+data/.tmp/
+data/.last-run.json
+
+# 工具生成的分享包
+.trae-html-share-packages/
+
+# 环境与密钥
+.env
+.env.*
+!.env.example
+
+# 系统与编辑器
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.log
