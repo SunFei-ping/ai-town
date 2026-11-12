@@ -1,10 +1,12 @@
 /**
- * 单日编排（M3 版：5 个居民、逐小时相遇、对话、关系值、记忆三层与 secret 检测）。
- * 完整流程见 SPCD §8.3，小报部分由 M4 补齐。
+ * 单日编排（M4 版：5 个居民、逐小时相遇、对话、关系值、记忆三层、secret 检测与小报）。
+ * 完整流程见 SPCD §8.3。
  */
 import { TickMachine } from './tick-machine.js';
 import { generatePlans } from '../agent/plan.js';
 import { generateUnsay } from '../agent/unsay.js';
+import { ensureUnsays } from '../report/unsay.js';
+import { generateReport } from '../report/builder.js';
 import { collectEncounters } from './encounter.js';
 import { generateDialogue } from './dialogue.js';
 import { createDialogueMemories, createEventMemory } from '../memory/tier.js';
@@ -207,8 +209,42 @@ export async function runDay({ town, agents, day, model, onStage, onWarning }) {
   // 记忆压缩：当天事件层 → 1 条总结层，原文丢弃（§8.6）
   const summaries = await compressDay({ agents, day });
 
+  // C6：补齐 5 条 unsaid，缺失重建最多 2 次，仍缺失则降级
+  const ensured = await ensureUnsays({
+    agents,
+    unsays,
+    regenerate: async (agent) => {
+      const text = await generateUnsay({ model, town, agent, day, context });
+      const guarded = await guardText({ text, secrets });
+      await writeGuardUsage({
+        townId: town.id,
+        day,
+        stage: 'unsay',
+        usage: guarded.usage,
+      });
+      return guarded.text;
+    },
+  });
+  if (ensured.degraded) {
+    degraded = true;
+    notify(WARNING_CODES.W_REPORT_PARTIAL, '有居民没说出口的话缺失，小报已用兜底句补齐');
+  }
+
   if (degraded) machine.to('degraded');
   machine.to('reporting');
+
+  // 小报：四类版块 + 5 条 unsaid，落库并保证 (town_id, day) 唯一
+  const report = await generateReport({
+    town,
+    day,
+    agents,
+    unsays: ensured.unsays,
+    dialogues,
+    previousRelations,
+    relationUpdates,
+    generationMode: degraded ? 'degraded' : 'normal',
+  });
+
   machine.to('done');
 
   const updatedTown = await dao.updateTownDay(town.id, day);
@@ -232,8 +268,9 @@ export async function runDay({ town, agents, day, model, onStage, onWarning }) {
     encounters,
     passedBy,
     relations: relationUpdates,
-    unsays,
+    unsays: ensured.unsays,
     summaries,
+    report,
     warnings,
     town: updatedTown,
   };

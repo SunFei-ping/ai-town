@@ -106,7 +106,9 @@ describe('单日编排（桩模型，5 人）', () => {
 
     expect(outcome.state).toBe('done');
     expect(outcome.dayStatus).toBe('partial');
-    expect(outcome.unsays).toHaveLength(0);
+    // C6：独白失败时用兜底句补齐 5 条，小报降级但不缺结构
+    expect(outcome.unsays).toHaveLength(5);
+    expect(outcome.report.generation_mode).toBe('degraded');
     expect(outcome.stages).toContain('degraded');
 
     const dayState = await dao.getDayState(town.id, 1);
