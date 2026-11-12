@@ -4,6 +4,7 @@ import { getCurrentTownId, clearCurrentTownId } from '../../infra/storage/app-st
 import { runDay } from '../../domain/simulation/day.js';
 import { createStubModel } from '../../infra/api/stub-model.js';
 import { createRelationGraph } from '../../ui/relationGraph.js';
+import { createReportView } from '../../ui/report.js';
 
 export const title = ROUTE_LABELS.town;
 
@@ -69,9 +70,10 @@ export function render(root) {
 
   const result = el('div');
   const relationSlot = el('div');
+  const reportSlot = el('div');
 
   card.append(agentLine, progressList, controls);
-  root.append(eyebrow, heading, intro, status, card, relationSlot, result);
+  root.append(eyebrow, heading, intro, status, card, relationSlot, reportSlot, result);
 
   function showError(message) {
     status.textContent = message;
@@ -106,6 +108,15 @@ export function render(root) {
     box.append(el('h3', null, '关系'));
     box.append(createRelationGraph({ agents, relations }));
     relationSlot.append(box);
+  }
+
+  function renderReport(report) {
+    reportSlot.innerHTML = '';
+    if (!report) return;
+    const box = el('div', 'card stack');
+    box.append(el('h3', null, '今日小报'));
+    box.append(createReportView({ report, townName: town?.name ?? '' }));
+    reportSlot.append(box);
   }
 
   function renderOutcome(outcome) {
@@ -156,6 +167,9 @@ export function render(root) {
     nextBtn.textContent = finished ? '这一周结束了' : '过一天';
     if (finished) markStage('reporting');
     renderRelations();
+
+    const latest = town.day_index >= 1 ? await dao.getReport(townId, town.day_index) : null;
+    if (root.isConnected) renderReport(latest);
   }
 
   nextBtn.addEventListener('click', async () => {

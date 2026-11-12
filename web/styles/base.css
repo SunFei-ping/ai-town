@@ -440,3 +440,28 @@ button.primary:hover {
   font-size: var(--text-sm);
   line-height: var(--leading-loose);
 }
+
+/* ---------- 示例小镇 ---------- */
+
+.sample-town {
+  margin-top: var(--space-5);
+}
+
+.sample-town__days {
+  gap: var(--space-2);
+}
+
+.sample-town__day {
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.sample-town__day[aria-pressed="true"] {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.sample-town__report {
+  margin-top: var(--space-4);
+}
