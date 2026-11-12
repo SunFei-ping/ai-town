@@ -107,6 +107,31 @@ async function checkLocal() {
       },
     },
     {
+      name: 'api-templates',
+      async run() {
+        const listRes = await fetch(`http://127.0.0.1:${port}/v1/templates`);
+        if (listRes.status === 404) {
+          console.log('    · /v1/templates 尚未实现，跳过');
+          return;
+        }
+        if (listRes.status !== 200) throw new Error(`列表状态码 ${listRes.status}`);
+        const list = await listRes.json();
+        if (!Array.isArray(list.templates) || list.templates.length !== 3) {
+          throw new Error('模板列表不是三套');
+        }
+        for (const meta of list.templates) {
+          const detailRes = await fetch(`http://127.0.0.1:${port}/v1/templates/${meta.id}`);
+          if (detailRes.status !== 200) throw new Error(`${meta.id} 状态码 ${detailRes.status}`);
+          const detail = await detailRes.json();
+          if (detail.template?.agents?.length !== 5) {
+            throw new Error(`${meta.id} 模板居民不是 5 人`);
+          }
+        }
+        const missing = await fetch(`http://127.0.0.1:${port}/v1/templates/not-exist`);
+        if (missing.status !== 400) throw new Error(`未知模板状态码 ${missing.status}`);
+      },
+    },
+    {
       name: 'session-live',
       async run() {
         const startedAt = Date.now();

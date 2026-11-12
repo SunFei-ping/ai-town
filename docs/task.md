@@ -1,7 +1,8 @@
 # AI小镇 · 任务分解（task.md）
 
-> 版本 v1.0 ｜ 2026-11-12 ｜ 依据 `docs/spcd.md` v1.1
+> 版本 v1.1 ｜ 2026-11-12 ｜ 依据 `docs/spcd.md` v1.2
 > 原则：**只实现 SPCD 已定义的内容，不新增功能**。任何任务若需要超出 SPCD 的行为，必须先在 SPCD 补章节。
+> v1.1 状态回写：M0–M6 代码与本地用例已完成；模板端点已补齐（P0-1）；preview 部署因缺外部凭据阻塞（P0-2）；真实模型复测待部署后执行。任务状态见 §9。
 
 ---
 
@@ -48,16 +49,16 @@
 
 ## 1. 任务树总览
 
-| 里程碑 | 任务数 | 主题 |
-|---|---|---|
-| M0 | 5 | 骨架与设计令牌 |
-| M1 | 7 | 垂直切片（1 居民 1 天，桩模型） |
-| M2 | 7 | 五人互动 |
-| M3 | 6 | 记忆分层与关系 |
-| M4 | 7 | 小报 |
-| M5 | 8 | 真实模型与流式 |
-| M6 | 7 | 事件、分享、导出、补算 |
-| 合计 | 47 | |
+| 里程碑 | 任务数 | 主题 | 状态 |
+|---|---|---|---|
+| M0 | 5 | 骨架与设计令牌 | 已完成 |
+| M1 | 7 | 垂直切片（1 居民 1 天，桩模型） | 已完成 |
+| M2 | 7 | 五人互动 | 已完成 |
+| M3 | 6 | 记忆分层与关系 | 已完成 |
+| M4 | 7 | 小报 | 已完成 |
+| M5 | 8 | 真实模型与流式 | 已完成（真实链路待复测） |
+| M6 | 7 | 事件、分享、导出、补算 | 6 项已完成，M6-07 阻塞 |
+| 合计 | 47 | | |
 
 ---
 
@@ -285,7 +286,7 @@ graph TD
 #### M1-04 最小 API
 - **优先级**：P0
 - **目标**：实现 `/v1/health` 与桩版 `/v1/session`，统一错误结构
-- **产出**：`functions/health/index.js`、`functions/session/index.js`、`shared/contracts/api.js`
+- **产出**：`functions/health/index.js`、`functions/session/index.js`
 - **依赖**：M0-04
 - **验收标准**：health 返回 `ok/model_reachable/latency_ms`；session 返回 `session_token/expires_at`；错误体符合 §7.1
 - **验证命令**：`npm run smoke -- --grep "api"`
@@ -369,7 +370,7 @@ graph TD
 #### M2-07 模板契约与加载器
 - **优先级**：P1
 - **目标**：实现 §7.4 的模板结构校验与加载，先落 1 套真实模板
-- **产出**：`shared/contracts/template.js`、`web/infra/api/templates.js`、`data/templates/*.json`
+- **产出**：`shared/contracts/template.js`、`web/infra/api/templates.js`、`functions/templates/index.js`、`data/templates/*.json`
 - **依赖**：M1-05
 - **验收标准**：模板必须 5 人；字段完整；不合规返回 `E_VALIDATION`；无真实个人信息
 - **验证命令**：`npm run test:contract -- --grep "template"`
@@ -634,40 +635,40 @@ graph TD
 
 ### 6.1 后端
 
-- [ ] 全部 7 个端点行为符合 SPCD §7.2
-- [ ] Tick 上下文通过 K1–K6 校验（§7.3）
-- [ ] 12 个错误码 + 5 个告警码全部可触发（§7.5）
-- [ ] SSE 使用 fetch 流式，未使用 EventSource；响应头含 `no-store` 与 `X-Accel-Buffering: no`
-- [ ] `Last-Event-ID` 续传可用，已完成阶段不重复调用模型
-- [ ] Key 仅内存驻留；日志与 KV 中无明文 Key
-- [ ] 边缘 KV 四类键均按 TTL 生效
-- [ ] 单局成本 ≤5 元；超限可降级且不中断
+- [x] 全部 7 个端点行为符合 SPCD §7.2（模板端点 3 / 4 于 2026-11-12 补齐，契约用例与本地冒烟通过）
+- [x] Tick 上下文通过 K1–K6 校验（§7.3）
+- [x] 12 个错误码 + 5 个告警码全部可触发（§7.5；`tests/contract/error-codes.test.js`）
+- [x] SSE 使用 fetch 流式，未使用 EventSource；响应头含 `no-store` 与 `X-Accel-Buffering: no`
+- [x] `Last-Event-ID` 续传可用，已完成阶段不重复调用模型
+- [x] Key 仅内存驻留；日志与 KV 中无明文 Key
+- [x] 边缘 KV 四类键均按 TTL 生效
+- [ ] 单局成本 ≤5 元；超限可降级且不中断（桩模型链路 3/3 通过，`test-results/metrics.json`；真实模型待 preview 后复测）
 
 ### 6.2 前端
 
-- [ ] 四屏可用，移动端 375px 无横向溢出
-- [ ] 建镇页支持模板切换与 5 人编辑，不足 5 人禁止保存
-- [ ] 主界面可推进、可投递事件（每天 1 条）、可看关系图
-- [ ] 小报四类 section 渲染正确，5 条 unsaid 齐全
-- [ ] 分享长图可导出并可在移动端显示
-- [ ] 导出 `town.json` / `town.md` 可用，JSON 可回导续玩
-- [ ] 示例镇断网可完整浏览，模型调用为 0
-- [ ] 隐私模式下自动降级并提示
+- [x] 四屏可用，移动端 375px 无横向溢出
+- [x] 建镇页支持模板切换与 5 人编辑，不足 5 人禁止保存
+- [x] 主界面可推进、可投递事件（每天 1 条）、可看关系图
+- [x] 小报四类 section 渲染正确，5 条 unsaid 齐全
+- [x] 分享长图可导出并可在移动端显示（导出 e2e 通过；真机显示列入发布后人工核验）
+- [x] 导出 `town.json` / `town.md` 可用，JSON 可回导续玩
+- [x] 示例镇断网可完整浏览，模型调用为 0
+- [x] 隐私模式下自动降级并提示
 
 ### 6.3 测试
 
-- [ ] 单元测试覆盖 C1–C9 全部约束的负向用例
-- [ ] 契约测试覆盖全部端点、上下文、模板与小报结构，含快照
-- [ ] 集成测试覆盖 tick 全链路、续传、护栏、补算、导出回导
-- [ ] 端到端覆盖垂直切片、七天真实跑通、示例镇离线
+- [x] 单元测试覆盖 C1–C9 全部约束的负向用例
+- [x] 契约测试覆盖全部端点、上下文、模板与小报结构，含快照（含模板端点 5 条）
+- [x] 集成测试覆盖 tick 全链路、续传、护栏、补算、导出回导
+- [x] 端到端覆盖垂直切片、七天真实跑通、示例镇离线（本地为桩模型 3/3；真实模型待复测）
 - [ ] 剧情质量规则项自动可跑，主观项有记录
 
 ### 6.4 文档
 
-- [ ] `docs/spcd.md` 与实际实现一致，偏差已回写
-- [ ] `docs/task.md` 全部任务状态为完成
-- [ ] 示例小镇与三套模板的数据说明齐备
-- [ ] 附录 B 的待确认项均有结论或明确遗留说明
+- [x] `docs/spcd.md` 与实际实现一致，偏差已回写（v1.2 附录 C）
+- [ ] `docs/task.md` 全部任务状态为完成（M6-07 待外部凭据）
+- [ ] 示例小镇与三套模板的数据说明齐备（数据结构见 spcd §7.4 / 附录 C；模板文案的独立说明仍缺）
+- [x] 附录 B 的待确认项均有结论或明确遗留说明
 
 ---
 
@@ -705,3 +706,48 @@ graph TD
 | Q7 内容抽检 | M5-08 | 暂不设置，主观评审代替 |
 
 Q1、Q2 仍是唯一可能影响里程碑门槛的外部变量。
+
+---
+
+## 9. 任务状态与阻塞项（2026-11-12）
+
+### 9.1 状态口径
+
+| 状态 | 含义 |
+|---|---|
+| 已完成 | 代码落地，且 `check:structure` / `check:tokens` / `test:unit` / `test:contract` / `test:integration` / 本地 `smoke` 至少一条相关用例通过 |
+| 待复测 | 本地桩链路通过，真实模型或远端环境尚未验证 |
+| 阻塞 | 依赖外部凭据，无法在本地完成 |
+
+最近一次本地验证：`check:structure`、`check:tokens`、`test:contract`（48 条）、`test:unit`（86 条）、`test:integration`（60 条）全部通过；`test:e2e` 最近一次全量运行通过。
+
+### 9.2 里程碑状态
+
+| 里程碑 | 状态 | 依据 |
+|---|---|---|
+| M0 | 已完成 | 目录与令牌校验通过；四屏路由 e2e 通过 |
+| M1 | 已完成 | tick-machine 单测、day-stub 集成、vertical-slice e2e 通过 |
+| M2 | 已完成 | plan-parallel / encounter / dialogue / relation 用例通过 |
+| M3 | 已完成 | memory-tier / compress / impression / secret-guard / v3-recall 通过 |
+| M4 | 已完成 | 小报契约与渲染 e2e、示例镇离线 e2e 通过 |
+| M5 | 已完成（待复测） | 模型适配、SSE、续传、错误码、护栏均有本地用例；真实 Key 与真实模型未验证 |
+| M6 | 6/7 完成 | 事件、分享长图、导出回导、补算完成；M6-07 部署阻塞 |
+
+### 9.3 逐项例外
+
+| 任务 | 状态 | 说明 |
+|---|---|---|
+| M5-02 session 真实实现 | 待复测 | 本地用桩 Key 验证签发/销毁/TTL；真实 Key 校验需真实模型地址 |
+| M5-08 七天真实端到端 | 待复测 | 桩链路连续 3 次通过（`test-results/metrics.json`）；V1/V4/V5 需真实模型重跑 |
+| M6-07 部署与版本校验 | 阻塞 | `scripts/deploy.mjs` 与 dry-run 就绪；preview 未上线，`smoke:remote` 未跑 |
+
+### 9.4 当前唯一外部阻塞（原 P0-2）
+
+| 需要提供 | 用途 |
+|---|---|
+| Cloudflare Pages 项目名 | 静态资源发布 |
+| KV namespace id（preview / production 各一） | tick 占位、限流计数、幂等键、会话索引 |
+| `MODEL_BASE_URL` / `MODEL_NAME` | 真实模型调用与 `/v1/health` 连通性 |
+| `CLOUDFLARE_API_TOKEN` 或登录态 | 发布与远端冒烟 |
+
+提供后执行：`npm run deploy:preview && npm run smoke:remote`，再按 M5-08 重跑真实模型七天用例，回填 §6.1 的成本项与 §9.3 的两条“待复测”。

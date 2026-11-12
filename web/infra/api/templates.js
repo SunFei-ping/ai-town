@@ -1,6 +1,9 @@
 /**
  * 模板加载：结构校验的唯一事实源在 shared/contracts/template.js。
  * 模板数据放在 data/templates 下，见 SPCD §7.4。
+ *
+ * 前端默认直读同一份静态文件，保证示例镇断网可用、模型调用为 0；
+ * 服务端只读端点 functions/templates 用于契约完整性与外部调用（见 spcd §7.2）。
  */
 import { fail } from '../../../shared/errors/app-error.js';
 import { ERROR_CODES } from '../../../shared/errors/codes.js';

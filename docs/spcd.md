@@ -1,9 +1,10 @@
 # AI小镇 · SPCD（软件产品设计契约）
 
-> 版本 v1.1 ｜ 2026-11-12 ｜ 状态：设计定稿，待实现
+> 版本 v1.2 ｜ 2026-11-12 ｜ 状态：已实现（preview 部署待外部凭据）
 > 上游文档：`AI小镇-项目一页纸.md`
 > 本文档面向：需要从零复现本项目的工程师
 > v1.1 修订：修复 SSE 鉴权矛盾、补齐 Tick 上下文契约、引入最小运行时状态层、删除与服务端形态冲突的端点与字段
+> v1.2 修订：三套模板定稿（Q3 关闭）、补齐模板端点说明与目录地图、回写实现偏差（见附录 C）
 
 ---
 
@@ -91,6 +92,9 @@
 | Q5 | 服务端日志保留时长 | 9.4 |
 | Q6 | Serverless 平台最终选型（Workers / Vercel） | 13、ADR-009 |
 | Q7 | 是否需要对生成内容做人工抽检 | 12 |
+
+> Q3 已关闭：三套模板定为海边小镇 / 大学城后街 / 老城区拆迁楼，数据见 `data/templates/*.json`。
+> Q6 实现默认按 Cloudflare（Pages 静态 + Workers 函数 + KV），适配层隔离，实际部署待凭据。
 
 ---
 
@@ -294,6 +298,7 @@ graph LR
 │  ├─ styles/                  设计令牌与页面样式
 │  ├─ app/
 │  │  ├─ router.js             页面路由与导航
+│  │  ├─ routes.js             四屏路由表
 │  │  └─ screens/              首页 / 建镇 / 主界面 / 年报
 │  ├─ domain/                  纯业务逻辑，不依赖 IO
 │  │  ├─ town/                 小镇生命周期
@@ -307,9 +312,14 @@ graph LR
 │  │  ├─ api/                  服务端契约调用与 SSE 解析
 │  │  ├─ storage/              IndexedDB 读写（含内存降级）
 │  │  └─ share/                分享长图生成
-│  └─ ui/                      展示组件
+│  ├─ ui/                      展示组件
+│  └─ vendor/                  本地第三方模块（Three.js），无构建、可离线
 ├─ functions/                  Serverless 函数
+│  ├─ worker.js                路由入口（把 /v1/* 分发给各函数）
+│  ├─ health/                  连通性检查
 │  ├─ session/                 创建与销毁会话
+│  ├─ templates/               模板只读端点（端点 3 / 4）
+│  ├─ events/                  用户事件投递（端点 6）
 │  ├─ tick/                    Tick 编排与流式转发
 │  ├─ model/                   模型适配层
 │  ├─ runtime/                 边缘 KV 适配（限流、幂等、tick 占位）
@@ -320,8 +330,11 @@ graph LR
 ├─ data/
 │  ├─ templates/               三套模板（静态）
 │  └─ sample-town/             示例小镇（静态）
+├─ scripts/                    本地开发、结构校验、冒烟、部署与指标
+├─ tests/                      单元 / 契约 / 集成 / 端到端
 └─ docs/
-   └─ spcd.md                  本文档
+   ├─ spcd.md                  本文档
+   └─ task.md                  任务分解
 ```
 
 **依赖方向（强制）**
@@ -657,6 +670,7 @@ erDiagram
 
 - 端点 5 的 `context` 由前端传入（因为状态在浏览器），服务端**不存储**小镇状态
 - 端点 5 必须在响应头声明 `Content-Type: text/event-stream`，并声明 `Cache-Control: no-store`、`X-Accel-Buffering: no`
+- 端点 3 / 4 为只读端点，数据源就是 `data/templates/*.json`，不鉴权、不写库；前端为保持示例镇离线可用，默认直读同一份静态文件，端点用于契约完整性与外部调用
 - 分享长图**不提供服务端端点**，由前端 `infra/share` 生成（见 ADR-008）
 
 ### 7.3 Tick 上下文契约
@@ -1197,10 +1211,10 @@ flowchart TD
 
 **本地开发**
 
-1. 静态资源：直接用任意静态服务器托管 `web/`，无需构建
-2. Serverless 函数：使用平台提供的本地运行时（如 `wrangler dev` 或 `vercel dev`），本地模拟边缘 KV
-3. 将前端 API 基地址指向本地函数地址，通过环境变量注入
-4. 冒烟：创建会话 → 建镇 → 跑 1 天桩模型 → 导出
+1. 静态资源：`npm run dev` 启动 `scripts/dev-server.mjs`，同时托管 `web/` 与 `/data/`（无需构建）
+2. Serverless 函数：同一进程把 `/v1/*` 分发到 `functions/<name>/index.js`，用 `scripts/local-kv.mjs` 本地模拟边缘 KV；无需 wrangler 登录
+3. 模型：`MODEL_MODE=stub` 时不触网；真实模型需注入 `MODEL_BASE_URL` / `MODEL_NAME`，Key 仍由用户在页面提交、只在会话内驻留
+4. 冒烟与校验：`npm run smoke`、`npm run check:structure`、`npm run check:tokens`、`npm run test:*` 均可在本地无凭据完成
 
 **发布**
 
@@ -1208,6 +1222,8 @@ flowchart TD
 2. 发布函数到边缘，注入 `schema_version`
 3. 校验静态与函数版本兼容（前端启动时读取 `/v1/health` 返回的版本）
 4. 冒烟后切换流量
+
+> 发布脚本 `scripts/deploy.mjs` 已就绪；preview 上线仍缺 Cloudflare 项目名、KV namespace id、`MODEL_BASE_URL` / `MODEL_NAME` 与访问凭据，在提供前保持未发布状态（见 task.md §9）。
 
 ### 13.4 发布与回滚
 
@@ -1399,3 +1415,19 @@ flowchart TD
 | Q10 | 是否接受「清浏览器数据即失去小镇」 | 用户预期管理 |
 | Q11 | C5 语义相似判定的阈值 | 泄露率与重写成本 |
 | Q12 | 单批补算 2 天是否合适 | 用户打开体验 |
+
+---
+
+## 附录 C · 实现偏差回写（v1.2）
+
+实现阶段新增或调整的行为集中在此登记。逐条确认均未突破 §1.4 非目标，也未新增对外数据字段。
+
+| 编号 | 项目 | 实现方式 | 与原文的差异 | 理由 |
+|---|---|---|---|---|
+| I1 | 主界面场景 | `web/ui/townScene.js` + `web/vendor/three.module.js`，本地 vendor、无构建、无跨域资源；WebGL 不可用时降级为文字提示 | SPCD 原文只要求「过一天」与五阶段进度，未描述场景形态 | 提升「围观一个小镇」的可读性；不影响任何 API 与数据契约 |
+| I2 | 模板端点 | `functions/templates` 只读返回 `data/templates/*.json`；前端默认仍直读同一份静态文件 | §7.2 端点 3 / 4 由「待实现」变为「已实现」；明确前端离线优先 | 补齐 7 个端点，同时保证示例镇断网可看、模型调用为 0 |
+| I3 | 本地运行时 | `scripts/dev-server.mjs` + `scripts/local-kv.mjs` 同时托管静态、分发 `/v1/*` 并模拟 KV | §13.3 原文建议 `wrangler dev` 或 `vercel dev` | 无外部凭据即可完整验证 M0–M6；线上仍用平台运行时 |
+| I4 | 示例小镇 | `data/sample-town/` 预渲染 7 天数据，首页直读 | §15 只要求示例镇可看，未规定数据形态 | 满足 V8（断网、0 次模型调用） |
+| I5 | 测试入口 | `scripts/run-tests.mjs` 把 `--grep` 翻译为 vitest `-t`；Playwright 直接跑 `tests/e2e` | 原文只规定测试框架，未规定入口 | 统一 §0.3 的 npm scripts 约定 |
+
+**回写规则**：后续任何实现偏差，先改本附录与对应章节，再改代码，不允许实现先偏离（与 task.md §7 回退原则一致）。

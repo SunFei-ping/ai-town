@@ -6,12 +6,14 @@
  */
 import health from './health/index.js';
 import session from './session/index.js';
+import templates from './templates/index.js';
 import tick from './tick/index.js';
 import events from './events/index.js';
 
 const ROUTES = [
   { pattern: /^\/v1\/health\/?$/, handler: health },
   { pattern: /^\/v1\/session\/?$/, handler: session },
+  { pattern: /^\/v1\/templates(?:\/([^/]+))?\/?$/, handler: templates },
   { pattern: /^\/v1\/towns\/([^/]+)\/tick\/?$/, handler: tick, town: true },
   { pattern: /^\/v1\/towns\/([^/]+)\/events\/?$/, handler: events, town: true },
 ];
