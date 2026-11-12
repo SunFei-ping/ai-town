@@ -13,7 +13,8 @@
     "test:integration": "node scripts/run-tests.mjs integration",
     "test:e2e": "playwright test",
     "smoke": "node scripts/smoke.mjs",
-    "smoke:remote": "node scripts/smoke.mjs --remote"
+    "smoke:remote": "node scripts/smoke.mjs --remote",
+    "metrics": "node scripts/metrics.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.65.0",

@@ -24,7 +24,8 @@ async function checkLocal() {
   const port = 4174;
   const child = spawn(process.execPath, [join(root, 'scripts', 'dev-server.mjs')], {
     cwd: root,
-    env: { ...process.env, PORT: String(port) },
+    // 本地冒烟固定使用桩模型，避免开发机上的真实模型配置影响结果
+    env: { ...process.env, PORT: String(port), MODEL_MODE: 'stub' },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
 
@@ -102,6 +103,50 @@ async function checkLocal() {
         if (res.status !== 200) throw new Error(`状态码 ${res.status}`);
         if (!data.session_token) throw new Error('缺少 session_token');
         if (!data.expires_at) throw new Error('缺少 expires_at');
+      },
+    },
+    {
+      name: 'session-live',
+      async run() {
+        const startedAt = Date.now();
+        const valid = await fetch(`http://127.0.0.1:${port}/v1/session`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ api_key: 'sk-smoke-1234567890' }),
+        });
+        const data = await valid.json();
+        if (valid.status !== 200) throw new Error(`有效 Key 状态码 ${valid.status}`);
+        if (!data.session_token) throw new Error('缺少 session_token');
+        const ttl = data.expires_at - startedAt;
+        if (ttl < 2 * 60 * 60 * 1000 - 5000 || ttl > 2 * 60 * 60 * 1000 + 5000) {
+          throw new Error(`会话 TTL 不是 2 小时：${ttl}`);
+        }
+
+        const invalid = await fetch(`http://127.0.0.1:${port}/v1/session`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ api_key: 'invalid-key-000000' }),
+        });
+        const invalidBody = await invalid.json();
+        if (invalid.status !== 401) throw new Error(`无效 Key 状态码 ${invalid.status}`);
+        if (invalidBody.error?.code !== 'E_KEY_INVALID') {
+          throw new Error(`无效 Key 错误码 ${invalidBody.error?.code}`);
+        }
+
+        const destroyed = await fetch(`http://127.0.0.1:${port}/v1/session`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${data.session_token}` },
+        });
+        if (destroyed.status !== 204) throw new Error(`销毁会话状态码 ${destroyed.status}`);
+
+        const again = await fetch(`http://127.0.0.1:${port}/v1/session`, {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${data.session_token}` },
+        });
+        const againBody = await again.json();
+        if (again.status !== 401 || againBody.error?.code !== 'E_NO_SESSION') {
+          throw new Error('销毁后会话未立即失效');
+        }
       },
     },
   ];

@@ -6,14 +6,15 @@ export default defineConfig({
   fullyParallel: false,
   reporter: [['list']],
   use: {
-    baseURL: 'http://127.0.0.1:4173',
+    baseURL: 'http://127.0.0.1:4183',
     headless: true,
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {
     command: 'node scripts/dev-server.mjs',
-    url: 'http://127.0.0.1:4173/',
+    url: 'http://127.0.0.1:4183/',
     reuseExistingServer: true,
     timeout: 20000,
+    env: { ...process.env, PORT: '4183', MODEL_MODE: 'stub' },
   },
 });
