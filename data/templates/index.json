@@ -6,6 +6,20 @@
       "summary": "临海，人少，潮气重。留不住年轻人，也赶不走老人。",
       "cover_hue": 202,
       "agent_count": 5
+    },
+    {
+      "id": "campus",
+      "name": "大学城后街",
+      "summary": "一条被学校围墙夹出来的街，白天卖饭，晚上卖安静。",
+      "cover_hue": 28,
+      "agent_count": 5
+    },
+    {
+      "id": "demolition",
+      "name": "老城区拆迁楼",
+      "summary": "六层红砖楼，墙上写满「拆」字，楼道里还晾着衣服。",
+      "cover_hue": 8,
+      "agent_count": 5
     }
   ]
 }

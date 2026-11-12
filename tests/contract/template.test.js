@@ -49,6 +49,19 @@ describe('模板契约（template）', () => {
     }
   });
 
+  it('templates-all：三套模板齐全，各 5 人且与索引一致', () => {
+    const index = readJson('index.json');
+    const ids = index.templates.map((meta) => meta.id);
+    expect(new Set(ids)).toEqual(new Set(['seaside', 'campus', 'demolition']));
+
+    for (const meta of index.templates) {
+      const template = validateTemplate(readJson(`${meta.id}.json`));
+      expect(template.id).toBe(meta.id);
+      expect(template.name).toBe(meta.name);
+      expect(template.agents).toHaveLength(5);
+    }
+  });
+
   it('居民不足 5 人返回 E_VALIDATION', () => {
     const broken = clone(seaside);
     broken.agents = broken.agents.slice(0, 4);
