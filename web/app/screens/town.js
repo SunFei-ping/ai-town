@@ -109,7 +109,8 @@ export function render(root) {
   sceneHead.append(sceneTitle, replayBtn);
   const sceneContainer = el('div', 'town-scene');
   sceneContainer.dataset.scene = 'town';
-  sceneCard.append(sceneHead, sceneContainer);
+  const sceneChips = el('div', 'town-scene__chips');
+  sceneCard.append(sceneHead, sceneContainer, sceneChips);
 
   const { list: progressList, items: progressItems } = buildProgress();
 
@@ -129,8 +130,20 @@ export function render(root) {
   root.append(eyebrow, heading, intro, status, modelCard, sceneCard, card, relationSlot, reportSlot, result);
 
   let scene = null;
+  const sceneChipsById = new Map();
+  function syncSceneChips(selection) {
+    for (const [id, chip] of sceneChipsById) {
+      chip.setAttribute(
+        'aria-pressed',
+        selection?.type === 'agent' && selection.id === id ? 'true' : 'false'
+      );
+    }
+  }
   try {
-    scene = createTownScene({ container: sceneContainer });
+    scene = createTownScene({
+      container: sceneContainer,
+      onSelect: syncSceneChips,
+    });
     activeScene = scene;
   } catch (err) {
     sceneContainer.innerHTML = '';
@@ -141,6 +154,17 @@ export function render(root) {
   let sceneData = null;
   function setSceneData(data, { play = false } = {}) {
     sceneData = data;
+    sceneChips.replaceChildren();
+    sceneChipsById.clear();
+    for (const agent of data.agents ?? []) {
+      const chip = el('button', 'town-scene__chip', agent.name);
+      chip.type = 'button';
+      chip.setAttribute('aria-pressed', 'false');
+      chip.addEventListener('click', () => scene?.selectAgent(agent.id));
+      sceneChips.append(chip);
+      sceneChipsById.set(agent.id, chip);
+    }
+    sceneChips.hidden = sceneChipsById.size === 0;
     if (play) scene?.playDay(data);
     else scene?.showStatic(data);
     replayBtn.hidden = !(data.plans ?? []).some((entry) => (entry.plan?.length ?? 0) > 0);
