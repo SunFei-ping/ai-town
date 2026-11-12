@@ -3,6 +3,8 @@ import * as dao from '../../infra/storage/dao.js';
 import { getCurrentTownId, clearCurrentTownId } from '../../infra/storage/app-state.js';
 import { runDay } from '../../domain/simulation/day.js';
 import { createStubModel } from '../../infra/api/stub-model.js';
+import { runTickFromServer } from '../../infra/api/tick-runner.js';
+import { openSession, getSession, destroySession } from '../../infra/api/session.js';
 import { createRelationGraph } from '../../ui/relationGraph.js';
 import { createReportView } from '../../ui/report.js';
 
@@ -58,6 +60,30 @@ export function render(root) {
   const status = el('p', 'notice');
   status.hidden = true;
 
+  const modelCard = el('div', 'card stack');
+  const modelTitle = el('h3', null, '模型连接');
+  const modelHint = el(
+    'p',
+    'muted',
+    '粘贴 API Key 后使用真实模型推进；不连接时使用本地桩模型，不消耗额度。Key 只用于换取两小时会话，不会写进本地存储。'
+  );
+  const keyField = el('div', 'field');
+  const keyLabel = el('label', null, 'API Key');
+  const keyInput = el('input', 'input');
+  keyInput.type = 'password';
+  keyInput.placeholder = 'sk-...';
+  keyInput.autocomplete = 'off';
+  keyInput.spellcheck = false;
+  keyField.append(keyLabel, keyInput);
+
+  const sessionRow = el('div', 'row');
+  const connectBtn = el('button', null, '连接模型');
+  const disconnectBtn = el('button', null, '断开');
+  disconnectBtn.hidden = true;
+  sessionRow.append(connectBtn, disconnectBtn);
+  const modelStatus = el('p', 'muted', '当前：桩模型（不消耗 API 额度）');
+  modelCard.append(modelTitle, modelHint, keyField, sessionRow, modelStatus);
+
   const { list: progressList, items: progressItems } = buildProgress();
 
   const card = el('div', 'card stack');
@@ -73,7 +99,7 @@ export function render(root) {
   const reportSlot = el('div');
 
   card.append(agentLine, progressList, controls);
-  root.append(eyebrow, heading, intro, status, card, relationSlot, reportSlot, result);
+  root.append(eyebrow, heading, intro, status, modelCard, card, relationSlot, reportSlot, result);
 
   function showError(message) {
     status.textContent = message;
@@ -101,6 +127,51 @@ export function render(root) {
   let town = null;
   let agents = [];
   let relations = [];
+  let session = getSession();
+
+  function refreshSessionUI() {
+    session = getSession();
+    const connected = Boolean(session);
+    connectBtn.textContent = connected ? '重新连接' : '连接模型';
+    disconnectBtn.hidden = !connected;
+    modelStatus.textContent = connected
+      ? `当前：真实模型（会话有效至 ${new Date(session.expires_at).toLocaleTimeString('zh-CN', {
+          hour12: false,
+        })}）`
+      : '当前：桩模型（不消耗 API 额度）';
+  }
+
+  connectBtn.addEventListener('click', async () => {
+    const apiKey = keyInput.value.trim();
+    if (!apiKey) {
+      showError('请先粘贴 API Key');
+      return;
+    }
+    connectBtn.disabled = true;
+    status.hidden = true;
+    try {
+      await openSession(apiKey);
+      keyInput.value = '';
+      refreshSessionUI();
+    } catch (err) {
+      showError(err.message ?? 'Key 校验失败');
+    } finally {
+      connectBtn.disabled = false;
+    }
+  });
+
+  disconnectBtn.addEventListener('click', async () => {
+    disconnectBtn.disabled = true;
+    try {
+      await destroySession();
+      status.hidden = true;
+      refreshSessionUI();
+    } finally {
+      disconnectBtn.disabled = false;
+    }
+  });
+
+  refreshSessionUI();
 
   function renderRelations() {
     relationSlot.innerHTML = '';
@@ -166,6 +237,7 @@ export function render(root) {
     nextBtn.disabled = finished;
     nextBtn.textContent = finished ? '这一周结束了' : '过一天';
     if (finished) markStage('reporting');
+    refreshSessionUI();
     renderRelations();
 
     const latest = town.day_index >= 1 ? await dao.getReport(townId, town.day_index) : null;
@@ -184,19 +256,34 @@ export function render(root) {
       return;
     }
 
+    const currentSession = getSession();
     try {
-      const outcome = await runDay({
-        town,
-        agents,
-        day: town.day_index + 1,
-        model: createStubModel(),
-        onStage: markStage,
-      });
+      const outcome = currentSession
+        ? await runTickFromServer({
+            town,
+            agents,
+            day: town.day_index + 1,
+            sessionToken: currentSession.session_token,
+            onStage: markStage,
+          })
+        : await runDay({
+            town,
+            agents,
+            day: town.day_index + 1,
+            model: createStubModel(),
+            onStage: markStage,
+          });
 
       renderOutcome(outcome);
       await refresh();
     } catch (err) {
-      showError(err.message ?? '推进失败');
+      if (err.code === 'E_NO_SESSION') {
+        await destroySession();
+        refreshSessionUI();
+        showError('会话已失效，请重新连接模型');
+      } else {
+        showError(err.message ?? '推进失败');
+      }
       nextBtn.disabled = false;
     }
   });
