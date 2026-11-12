@@ -323,3 +323,120 @@ button.primary:hover {
   text-align: center;
   color: var(--color-ink-faint);
 }
+
+/* ---------- 一日计划 ---------- */
+
+.agent-plan + .agent-plan {
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-line);
+}
+
+.agent-plan__name {
+  margin: 0 0 var(--space-2);
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  color: var(--color-ink);
+}
+
+/* ---------- 关系图 ---------- */
+
+.relation-graph {
+  margin: 0;
+}
+
+.relation-graph__canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 320px;
+}
+
+.relation-graph__node circle {
+  fill: var(--color-accent-soft);
+  stroke: var(--color-accent);
+  stroke-width: 1.5;
+}
+
+.relation-graph__node text {
+  fill: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 11px;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+
+.relation-graph__edge {
+  fill: none;
+  stroke-width: 1.5;
+}
+
+.relation-graph__edge[data-label="stranger"] {
+  stroke: var(--color-ink-faint);
+  stroke-dasharray: 3 3;
+}
+
+.relation-graph__edge[data-label="familiar"] {
+  stroke: var(--color-accent);
+}
+
+.relation-graph__edge[data-label="friend"] {
+  stroke: var(--color-accent);
+  stroke-width: 2.5;
+}
+
+.relation-graph__edge[data-label="knot"] {
+  stroke: var(--color-warn);
+  stroke-width: 2.5;
+}
+
+.relation-graph__arrow[data-label="stranger"] {
+  fill: var(--color-ink-faint);
+}
+
+.relation-graph__arrow[data-label="familiar"] {
+  fill: var(--color-accent);
+}
+
+.relation-graph__arrow[data-label="knot"] {
+  fill: var(--color-warn);
+}
+
+.relation-graph__legend {
+  display: flex;
+  gap: var(--space-4);
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--text-xs);
+  color: var(--color-ink-soft);
+}
+
+.relation-graph__legend-item::before {
+  content: "";
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  margin-right: var(--space-1);
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.relation-graph__legend-item[data-state="familiar"] {
+  color: var(--color-accent);
+}
+
+.relation-graph__legend-item[data-state="stranger"] {
+  color: var(--color-ink-faint);
+}
+
+.relation-graph__legend-item[data-state="knot"] {
+  color: var(--color-warn);
+}
+
+.relation-graph__edges {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-4);
+  color: var(--color-ink-soft);
+  font-size: var(--text-sm);
+  line-height: var(--leading-loose);
+}

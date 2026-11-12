@@ -3,6 +3,7 @@ import * as dao from '../../infra/storage/dao.js';
 import { getCurrentTownId, clearCurrentTownId } from '../../infra/storage/app-state.js';
 import { runDay } from '../../domain/simulation/day.js';
 import { createStubModel } from '../../infra/api/stub-model.js';
+import { createRelationGraph } from '../../ui/relationGraph.js';
 
 export const title = ROUTE_LABELS.town;
 
@@ -67,9 +68,10 @@ export function render(root) {
   controls.append(nextBtn, resetBtn);
 
   const result = el('div');
+  const relationSlot = el('div');
 
   card.append(agentLine, progressList, controls);
-  root.append(eyebrow, heading, intro, status, card, result);
+  root.append(eyebrow, heading, intro, status, card, relationSlot, result);
 
   function showError(message) {
     status.textContent = message;
@@ -96,16 +98,64 @@ export function render(root) {
 
   let town = null;
   let agents = [];
+  let relations = [];
+
+  function renderRelations() {
+    relationSlot.innerHTML = '';
+    const box = el('div', 'card stack');
+    box.append(el('h3', null, '关系'));
+    box.append(createRelationGraph({ agents, relations }));
+    relationSlot.append(box);
+  }
+
+  function renderOutcome(outcome) {
+    result.innerHTML = '';
+    const box = el('div', 'card stack');
+    box.append(el('h3', null, `今日计划 · 第 ${outcome.town.day_index} 天`));
+
+    const groups = el('div', 'stack');
+    for (const entry of outcome.plans) {
+      const block = el('div', 'agent-plan');
+      block.append(
+        el('p', 'agent-plan__name', `${entry.agent_name}${entry.degraded ? '（模板计划）' : ''}`)
+      );
+      const list = el('ul', 'plan-list');
+      for (const item of entry.plan) {
+        list.append(
+          el('li', null, `${String(item.hour).padStart(2, '0')}:00 ${item.location} — ${item.intent}`)
+        );
+      }
+      block.append(list);
+
+      const unsay = outcome.unsays.find((item) => item.agent_id === entry.agent_id);
+      if (unsay) block.append(el('p', 'quote', unsay.text));
+      groups.append(block);
+    }
+    box.append(groups);
+
+    if (outcome.warnings.length > 0) {
+      box.append(
+        el('p', 'notice', `有 ${outcome.warnings.length} 处生成失败，已用降级结果继续。`)
+      );
+    }
+    if (outcome.dayStatus === 'partial') {
+      box.append(el('p', 'notice', '这一天生成得不完整，但已经记下了。'));
+    }
+
+    result.append(box);
+  }
 
   async function refresh() {
     town = await dao.getTown(townId);
     agents = await dao.listAgents(townId);
+    relations = await dao.listRelations(townId);
     eyebrow.textContent = `第 ${town.day_index} 天`;
     agentLine.textContent = agents.map((a) => `${a.name}（${a.occupation}）`).join(' · ');
     const finished = town.day_index >= 7;
     nextBtn.disabled = finished;
     nextBtn.textContent = finished ? '这一周结束了' : '过一天';
     if (finished) markStage('reporting');
+    renderRelations();
   }
 
   nextBtn.addEventListener('click', async () => {
@@ -114,9 +164,8 @@ export function render(root) {
     status.hidden = true;
     resetProgress();
 
-    const lead = agents[0];
-    if (!lead) {
-      showError('没有可推进的居民');
+    if (agents.length !== 5) {
+      showError('小镇必须恰好五个居民');
       nextBtn.disabled = false;
       return;
     }
@@ -124,29 +173,13 @@ export function render(root) {
     try {
       const outcome = await runDay({
         town,
-        agent: lead,
+        agents,
         day: town.day_index + 1,
         model: createStubModel(),
         onStage: markStage,
       });
 
-      const planBox = el('div', 'card stack');
-      const planHeading = el('h3', null, `今日计划 · 第 ${outcome.town.day_index} 天`);
-      const planList = el('ul', 'plan-list');
-      for (const item of outcome.plan) {
-        planList.append(el('li', null, `${String(item.hour).padStart(2, '0')}:00 ${item.location} — ${item.intent}`));
-      }
-      planBox.append(planHeading, planList);
-
-      if (outcome.unsay) {
-        planBox.append(el('p', 'quote', outcome.unsay));
-      }
-      if (outcome.dayStatus === 'partial') {
-        planBox.append(el('p', 'notice', '这一天生成得不完整，但已经记下了。'));
-      }
-
-      result.innerHTML = '';
-      result.append(planBox);
+      renderOutcome(outcome);
       await refresh();
     } catch (err) {
       showError(err.message ?? '推进失败');

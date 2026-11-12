@@ -8,7 +8,7 @@
 export function createStubModel({ failOn = null, delayMs = 0 } = {}) {
   let calls = 0;
 
-  async function complete({ stage, agent, day }) {
+  async function complete({ stage, agent, agents, day, hour, location }) {
     calls += 1;
     if (delayMs > 0) await new Promise((r) => setTimeout(r, delayMs));
     if (failOn === stage) throw new Error(`stub failure at ${stage}`);
@@ -32,7 +32,14 @@ export function createStubModel({ failOn = null, delayMs = 0 } = {}) {
     }
 
     if (stage === 'dialogue') {
-      return { rounds: [] };
+      const [first, second] = agents ?? [agent, agent];
+      return {
+        rounds: [
+          { speaker: first.name, content: `（${location}）今天人不多。` },
+          { speaker: second.name, content: '嗯，风比昨天大。' },
+          { speaker: first.name, content: '你也早点回吧。' },
+        ],
+      };
     }
 
     throw new Error(`stub 不支持的阶段：${stage}`);

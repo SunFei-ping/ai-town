@@ -137,6 +137,11 @@ export async function listRelations(townId) {
   return db.getAllByIndex('relation', 'by_town', townId);
 }
 
+export async function getRelation(fromAgentId, toAgentId) {
+  const rows = await db.getAllByIndex('relation', 'by_pair', [fromAgentId, toAgentId]);
+  return rows[0] ?? null;
+}
+
 /* ------------------------------ 事件 ------------------------------ */
 
 /**
@@ -204,7 +209,7 @@ export async function saveDialogue(dialogue) {
 }
 
 export async function listDialogues(townId, day) {
-  return db.getAllByIndex('dialogue', 'by_town_day_hour', [townId, day]);
+  return db.getAllByIndexPrefix('dialogue', 'by_town_day_hour', [townId, day]);
 }
 
 export async function addUsage(usage) {

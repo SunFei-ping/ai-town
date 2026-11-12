@@ -15,8 +15,9 @@ test('垂直切片：建镇 → 跑一天 → 展示计划与独白 → 刷新�
   await page.getByRole('button', { name: '过一天' }).click();
 
   await expect(page.getByRole('heading', { name: /今日计划/ })).toBeVisible();
-  await expect(page.locator('.quote')).toBeVisible();
-  await expect(page.locator('.plan-list li')).toHaveCount(4);
+  await expect(page.locator('.agent-plan')).toHaveCount(5);
+  await expect(page.locator('.quote')).toHaveCount(5);
+  await expect(page.locator('.plan-list li')).toHaveCount(20);
   await expect(page.locator('.screen__eyebrow')).toHaveText('第 1 天');
 
   await page.reload();
