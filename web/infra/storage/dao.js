@@ -186,6 +186,14 @@ export async function listMemories(agentId, tier) {
   return db.getAllByIndex('memory', 'by_agent_tier', [agentId, tier]);
 }
 
+export async function listAllMemories(agentId) {
+  return db.getAllByIndexPrefix('memory', 'by_agent_tier', [agentId]);
+}
+
+export async function deleteMemory(memoryId) {
+  return db.del('memory', memoryId);
+}
+
 /* ------------------------------ 当日状态 ------------------------------ */
 
 export async function putDayState(state) {
