@@ -229,6 +229,81 @@ export async function listUsage(townId, day) {
   return db.getAllByIndex('usage', 'by_town_day', [townId, day]);
 }
 
+/* ------------------------------ 小报 ------------------------------ */
+
+/**
+ * 写入一份小报及其版块与 unsay。
+ * `(town_id, day)` 唯一：重复生成直接报错，不覆盖已有小报。
+ */
+export async function saveReport(report) {
+  const existing = await db.getAllByIndex('daily_report', 'by_town_day', [
+    report.town_id,
+    report.day,
+  ]);
+  if (existing[0]) {
+    fail(ERROR_CODES.E_VALIDATION, `第 ${report.day} 天的小报已经生成过了`);
+  }
+
+  const record = {
+    id: newId('rpt'),
+    town_id: report.town_id,
+    day: report.day,
+    headline: report.headline,
+    generation_mode: report.generation_mode,
+    generated_at: report.generated_at ?? Date.now(),
+  };
+  await db.put('daily_report', record);
+
+  const sections = [];
+  for (const section of report.sections) {
+    const row = {
+      id: newId('sec'),
+      report_id: record.id,
+      kind: section.kind,
+      title: section.title,
+      body: section.body,
+      order: section.order,
+    };
+    await db.put('report_section', row);
+    sections.push(row);
+  }
+
+  const unsays = [];
+  for (const unsay of report.unsays) {
+    const row = {
+      id: newId('uns'),
+      report_id: record.id,
+      agent_id: unsay.agent_id,
+      agent_name: unsay.agent_name ?? null,
+      text: unsay.text,
+    };
+    await db.put('unsay', row);
+    unsays.push(row);
+  }
+
+  sections.sort((a, b) => a.order - b.order);
+  return { ...record, sections, unsays };
+}
+
+/** 取某天的小报；没有则返回 null */
+export async function getReport(townId, day) {
+  const rows = await db.getAllByIndex('daily_report', 'by_town_day', [townId, day]);
+  const report = rows[0];
+  if (!report) return null;
+
+  const sections = await db.getAllByIndex('report_section', 'by_report', report.id);
+  const unsays = await db.getAllByIndex('unsay', 'by_report', report.id);
+  sections.sort((a, b) => a.order - b.order);
+
+  return { ...report, sections, unsays };
+}
+
+/** 取一座小镇的全部小报（按天升序，不含版块明细） */
+export async function listReports(townId) {
+  const rows = await db.getAllByIndexPrefix('daily_report', 'by_town_day', [townId]);
+  return rows.sort((a, b) => a.day - b.day);
+}
+
 /* ------------------------------ 级联删除 ------------------------------ */
 
 export async function deleteTown(townId) {
