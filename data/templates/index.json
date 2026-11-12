@@ -1,0 +1,11 @@
+{
+  "templates": [
+    {
+      "id": "seaside",
+      "name": "海边小镇",
+      "summary": "临海，人少，潮气重。留不住年轻人，也赶不走老人。",
+      "cover_hue": 202,
+      "agent_count": 5
+    }
+  ]
+}
