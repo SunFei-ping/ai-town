@@ -18,7 +18,7 @@ beforeEach(async () => {
 });
 
 describe('对话落库与事件层记忆（dialogue-persist）', () => {
-  it('每段对话产生 2 条事件记忆，且 expire_day = created_day', async () => {
+  it('每段对话落库，日终压缩后当日事件层归零、总结层可读', async () => {
     const { town, agents } = await setupTown();
     const outcome = await runDay({ town, agents, day: 1, model: createStubModel() });
 
@@ -36,17 +36,15 @@ describe('对话落库与事件层记忆（dialogue-persist）', () => {
       }
     }
 
-    let targetedMemories = 0;
     for (const agent of agents) {
-      const memories = await dao.listMemories(agent.id, 'event');
-      for (const memory of memories.filter((item) => item.target_agent_id !== null)) {
-        targetedMemories += 1;
-        expect(memory.tier).toBe('event');
-        expect(memory.expire_day).toBe(memory.created_day);
-        expect(memory.created_day).toBe(1);
-      }
+      const summaries = await dao.listMemories(agent.id, 'summary');
+      const daySummary = summaries.find((memory) => memory.created_day === 1);
+      expect(daySummary).toBeTruthy();
+      expect(daySummary.content.length).toBeLessThanOrEqual(80);
+
+      const events = await dao.listMemories(agent.id, 'event');
+      expect(events.filter((memory) => memory.created_day === 1)).toHaveLength(0);
     }
-    expect(targetedMemories).toBe(dialogues.length * 2);
   });
 
   it('对话同时更新双方有向关系，单日变化不超过 ±8', async () => {

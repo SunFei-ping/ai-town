@@ -25,8 +25,8 @@ export function validatePlan(plan) {
   return plan;
 }
 
-export async function generatePlan({ model, town, agent, day }) {
-  const result = await model.complete({ stage: 'plan', town, agent, day });
+export async function generatePlan({ model, town, agent, day, context }) {
+  const result = await model.complete({ stage: 'plan', town, agent, day, context });
   return validatePlan(result?.plan);
 }
 
@@ -44,10 +44,10 @@ export function fallbackPlan(agent) {
   ];
 }
 
-async function generateOnePlan({ model, town, agent, day, onWarning }) {
+async function generateOnePlan({ model, town, agent, day, context, onWarning }) {
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
-      const plan = await generatePlan({ model, town, agent, day });
+      const plan = await generatePlan({ model, town, agent, day, context });
       return { agent_id: agent.id, agent_name: agent.name, plan, degraded: false };
     } catch {
       /* 重试一次；仍失败走模板计划 */
@@ -69,11 +69,11 @@ async function generateOnePlan({ model, town, agent, day, onWarning }) {
 /**
  * 5 人并行生成当日计划，返回值顺序与 agents 一致，且保证条数不变。
  */
-export async function generatePlans({ model, town, agents, day, onWarning }) {
+export async function generatePlans({ model, town, agents, day, context, onWarning }) {
   if (!Array.isArray(agents) || agents.length === 0) {
     fail(ERROR_CODES.E_VALIDATION, '生成计划至少需要 1 个居民');
   }
   return Promise.all(
-    agents.map((agent) => generateOnePlan({ model, town, agent, day, onWarning }))
+    agents.map((agent) => generateOnePlan({ model, town, agent, day, context, onWarning }))
   );
 }

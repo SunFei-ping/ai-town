@@ -16,7 +16,7 @@ export function validateUnsay(result) {
   return text;
 }
 
-export async function generateUnsay({ model, town, agent, day }) {
-  const result = await model.complete({ stage: 'unsay', town, agent, day });
+export async function generateUnsay({ model, town, agent, day, context }) {
+  const result = await model.complete({ stage: 'unsay', town, agent, day, context });
   return validateUnsay(result);
 }

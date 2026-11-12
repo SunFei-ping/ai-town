@@ -37,7 +37,7 @@ export function normalizeTranscript(rounds, agents) {
 /**
  * 生成一段对话并整理为可直接写入 DIALOGUE 的结构。
  */
-export async function generateDialogue({ model, town, encounter, initiator, partner, day }) {
+export async function generateDialogue({ model, town, encounter, initiator, partner, day, context }) {
   const result = await model.complete({
     stage: 'dialogue',
     town,
@@ -46,6 +46,7 @@ export async function generateDialogue({ model, town, encounter, initiator, part
     day,
     hour: encounter.hour,
     location: encounter.location,
+    context,
   });
 
   const { rounds, truncated } = normalizeTranscript(result?.rounds, [initiator, partner]);

@@ -63,8 +63,11 @@ describe('单日编排（桩模型，5 人）', () => {
     const savedAgents = await dao.listAgents(town.id);
     for (const agent of savedAgents) {
       expect(agent.plan_json).toContain('码头');
-      const memories = await dao.listMemories(agent.id, 'event');
-      expect(memories.some((memory) => memory.expire_day === 1)).toBe(true);
+      // M3：当天事件层已在日终压缩为 1 条总结层
+      const summaries = await dao.listMemories(agent.id, 'summary');
+      expect(summaries.some((memory) => memory.created_day === 1)).toBe(true);
+      const events = await dao.listMemories(agent.id, 'event');
+      expect(events.filter((memory) => memory.created_day === 1)).toHaveLength(0);
     }
 
     expect((await dao.listDialogues(town.id, 1)).length).toBeGreaterThan(0);

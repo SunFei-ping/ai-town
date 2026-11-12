@@ -1,5 +1,5 @@
 /**
- * 单日编排（M2 版：5 个居民、逐小时相遇、对话、关系值与事件层记忆）。
+ * 单日编排（M3 版：5 个居民、逐小时相遇、对话、关系值、记忆三层与 secret 检测）。
  * 完整流程见 SPCD §8.3，小报部分由 M4 补齐。
  */
 import { TickMachine } from './tick-machine.js';
@@ -8,6 +8,9 @@ import { generateUnsay } from '../agent/unsay.js';
 import { collectEncounters } from './encounter.js';
 import { generateDialogue } from './dialogue.js';
 import { createDialogueMemories, createEventMemory } from '../memory/tier.js';
+import { assembleContextFromDB } from '../memory/assemble.js';
+import { compressDay } from '../memory/compress.js';
+import { guardDialogue, guardText, writeGuardUsage } from '../memory/secretGuard.js';
 import { planRelationUpdates } from '../relation/rules.js';
 import * as dao from '../../infra/storage/dao.js';
 import { fail } from '../../../shared/errors/app-error.js';
@@ -43,11 +46,22 @@ export async function runDay({ town, agents, day, model, onStage, onWarning }) {
   machine.to('validating');
   machine.to('planning');
 
+  // 计划和对话都在组装好的上下文里进行：印象层 + 总结层 + 关系 + 当日事件
+  const previousRelations = await dao.listRelations(town.id);
+  const context = await assembleContextFromDB({
+    town,
+    day,
+    agents,
+    relations: previousRelations,
+  });
+  const secrets = agents.map((agent) => agent.secret);
+
   const plans = await generatePlans({
     model,
     town,
     agents,
     day,
+    context,
     onWarning: (warning) => notify(warning.code, warning.message),
   });
   const planByAgent = new Map(plans.map((entry) => [entry.agent_id, entry]));
@@ -105,8 +119,18 @@ export async function runDay({ town, agents, day, model, onStage, onWarning }) {
         initiator: first,
         partner: second,
         day,
+        context,
       });
-      const saved = await dao.saveDialogue(dialogue);
+      // C5：secret 不得进入对话正文
+      const guarded = await guardDialogue({ dialogue, secrets });
+      await writeGuardUsage({
+        townId: town.id,
+        day,
+        stage: 'dialogue',
+        usage: guarded.usage,
+      });
+
+      const saved = await dao.saveDialogue(guarded.dialogue);
       dialogues.push(saved);
       for (const memory of createDialogueMemories({ dialogue: saved, agents })) {
         await dao.putMemory(memory);
@@ -132,7 +156,6 @@ export async function runDay({ town, agents, day, model, onStage, onWarning }) {
   }
 
   // 关系值：有对话的两人更新，连续无互动的衰减
-  const previousRelations = await dao.listRelations(town.id);
   const relationUpdates = planRelationUpdates({
     townId: town.id,
     relations: previousRelations,
@@ -147,7 +170,7 @@ export async function runDay({ town, agents, day, model, onStage, onWarning }) {
 
   // 每人一句未说出口的话；单点失败不阻塞当天
   const unsayResults = await Promise.allSettled(
-    agents.map((agent) => generateUnsay({ model, town, agent, day }))
+    agents.map((agent) => generateUnsay({ model, town, agent, day, context }))
   );
   const unsays = [];
   unsayResults.forEach((result, index) => {
@@ -161,6 +184,16 @@ export async function runDay({ town, agents, day, model, onStage, onWarning }) {
   });
 
   for (const unsay of unsays) {
+    // C5：独白同样不得泄露 secret
+    const guarded = await guardText({ text: unsay.text, secrets });
+    unsay.text = guarded.text;
+    await writeGuardUsage({
+      townId: town.id,
+      day,
+      stage: 'unsay',
+      usage: guarded.usage,
+    });
+
     await dao.putMemory(
       createEventMemory({
         agent_id: unsay.agent_id,
@@ -170,6 +203,9 @@ export async function runDay({ town, agents, day, model, onStage, onWarning }) {
       })
     );
   }
+
+  // 记忆压缩：当天事件层 → 1 条总结层，原文丢弃（§8.6）
+  const summaries = await compressDay({ agents, day });
 
   if (degraded) machine.to('degraded');
   machine.to('reporting');
@@ -197,6 +233,7 @@ export async function runDay({ town, agents, day, model, onStage, onWarning }) {
     passedBy,
     relations: relationUpdates,
     unsays,
+    summaries,
     warnings,
     town: updatedTown,
   };
