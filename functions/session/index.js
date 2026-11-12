@@ -1,13 +1,20 @@
 import { toErrorBody, ERROR_CODES } from '../../shared/errors/codes.js';
 import { LIMITS } from '../../shared/contracts/index.js';
+import { fail } from '../../shared/errors/app-error.js';
+import { verifyApiKey } from '../model/index.js';
+import { createRuntimeKV } from '../runtime/kv.js';
+import { errorResult } from '../guard/http.js';
 
 const JSON_HEADERS = { 'Content-Type': 'application/json; charset=utf-8' };
 
 /**
  * Key 只在内存中驻留，不落盘、不进日志（SPCD §9.2）。
  * 进程重启或 TTL 到期即失效，前端需要重新粘贴。
+ *
+ * 挂在 globalThis 上，保证开发服务器热加载函数模块时仍共用同一份会话。
  */
-const sessions = new Map();
+const SESSION_STORE = globalThis.__aiTownSessions ?? new Map();
+globalThis.__aiTownSessions = SESSION_STORE;
 
 function traceId() {
   return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}`;
@@ -15,8 +22,8 @@ function traceId() {
 
 function purgeExpired() {
   const now = Date.now();
-  for (const [token, session] of sessions) {
-    if (session.expiresAt <= now) sessions.delete(token);
+  for (const [token, session] of SESSION_STORE) {
+    if (session.expiresAt <= now) SESSION_STORE.delete(token);
   }
 }
 
@@ -26,8 +33,42 @@ function bearer(headers) {
   return match ? match[1].trim() : '';
 }
 
-export default async function handler({ method, headers, body }) {
+function resolveEnv(env) {
+  return env ?? globalThis.process?.env ?? {};
+}
+
+function modelMode(env) {
+  if (env.MODEL_MODE === 'stub') return 'stub';
+  if (env.MODEL_MODE === 'live') return 'live';
+  return env.MODEL_BASE_URL ? 'live' : 'stub';
+}
+
+/**
+ * 本地/测试环境未配置模型服务时退化为格式校验，保证 M0/M1 的离线链路可用。
+ * 配置了 MODEL_BASE_URL 或 MODEL_MODE=live 时执行真实校验。
+ */
+async function validateApiKey(apiKey, { env, fetchImpl }) {
+  if (apiKey.length < 8 || apiKey.startsWith('invalid')) {
+    fail(ERROR_CODES.E_KEY_INVALID);
+  }
+  if (modelMode(env) === 'stub') return { mode: 'stub' };
+
+  await verifyApiKey({
+    baseUrl: env.MODEL_BASE_URL,
+    apiKey,
+    fetchImpl,
+    timeoutMs: Number(env.MODEL_TIMEOUT_MS) || 5000,
+  });
+  return { mode: 'live' };
+}
+
+export default async function handler({ method, headers, body, kv, env, fetchImpl } = {}) {
   purgeExpired();
+
+  const resolvedEnv = resolveEnv(env);
+  const resolvedFetch = fetchImpl ?? globalThis.fetch;
+  const runtimeKV = kv ? createRuntimeKV(kv) : null;
+  const trace = traceId();
 
   if (method === 'POST') {
     const apiKey = typeof body?.api_key === 'string' ? body.api_key.trim() : '';
@@ -35,20 +76,23 @@ export default async function handler({ method, headers, body }) {
       return {
         status: 400,
         headers: JSON_HEADERS,
-        body: toErrorBody(ERROR_CODES.E_VALIDATION, '请填写 API Key', traceId()),
+        body: toErrorBody(ERROR_CODES.E_VALIDATION, '请填写 API Key', trace),
       };
     }
-    if (apiKey.length < 8 || apiKey.startsWith('invalid')) {
-      return {
-        status: 401,
-        headers: JSON_HEADERS,
-        body: toErrorBody(ERROR_CODES.E_KEY_INVALID, undefined, traceId()),
-      };
+
+    try {
+      await validateApiKey(apiKey, { env: resolvedEnv, fetchImpl: resolvedFetch });
+    } catch (err) {
+      return errorResult(err.code, err.message, { traceId: trace });
     }
 
     const token = `sess_${globalThis.crypto?.randomUUID?.() ?? Date.now()}`;
     const expiresAt = Date.now() + LIMITS.SESSION_TTL_MS;
-    sessions.set(token, { apiKey, expiresAt });
+    const keyRef = `ref_${globalThis.crypto?.randomUUID?.() ?? Date.now()}`;
+
+    SESSION_STORE.set(token, { apiKey, keyRef, expiresAt });
+    // 会话索引只保存不透明引用，绝不在 KV 中留下 Key
+    await runtimeKV?.putSessionIndex(token, keyRef);
 
     return {
       status: 200,
@@ -59,28 +103,29 @@ export default async function handler({ method, headers, body }) {
 
   if (method === 'DELETE') {
     const token = bearer(headers);
-    if (!token || !sessions.has(token)) {
+    if (!token || !SESSION_STORE.has(token)) {
       return {
         status: 401,
         headers: JSON_HEADERS,
-        body: toErrorBody(ERROR_CODES.E_NO_SESSION, undefined, traceId()),
+        body: toErrorBody(ERROR_CODES.E_NO_SESSION, undefined, trace),
       };
     }
-    sessions.delete(token);
+    SESSION_STORE.delete(token);
+    await runtimeKV?.deleteSessionIndex(token);
     return { status: 204, headers: JSON_HEADERS, body: '' };
   }
 
   return {
     status: 405,
     headers: JSON_HEADERS,
-    body: toErrorBody(ERROR_CODES.E_VALIDATION, 'session 只支持 POST / DELETE', traceId()),
+    body: toErrorBody(ERROR_CODES.E_VALIDATION, 'session 只支持 POST / DELETE', trace),
   };
 }
 
-/** 供后续 tick 端点复用的会话查询 */
+/** 供 tick 端点复用的会话查询 */
 export function getSession(headers) {
   purgeExpired();
   const token = bearer(headers);
-  const session = token ? sessions.get(token) : null;
+  const session = token ? SESSION_STORE.get(token) : null;
   return session ? { token, ...session } : null;
 }
