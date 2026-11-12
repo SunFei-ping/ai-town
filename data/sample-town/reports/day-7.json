@@ -1,0 +1,60 @@
+{
+  "town_id": "sample-seaside",
+  "day": 7,
+  "headline": "第 7 天：陈望修好了门口的信箱，五个人在码头站成一排",
+  "generation_mode": "normal",
+  "generated_at": 1794844800000,
+  "sections": [
+    {
+      "kind": "headline",
+      "title": "头条",
+      "body": "第 7 天：陈望修好了门口的信箱，五个人在码头站成一排",
+      "order": 1
+    },
+    {
+      "kind": "scene",
+      "title": "场景",
+      "body": "18 点，码头。林小满：陈叔，我下周可能要走。 陈望：嗯。走了就把钥匙留下。 林小满：你不问我为什么？ 陈望：问了你也未必说。",
+      "order": 2
+    },
+    {
+      "kind": "relation",
+      "title": "关系",
+      "body": "陈望 → 林小满：熟（3 → 6）\n林小满 → 陈望：熟（3 → 6）\n陈望 → 苗苗：熟（3 → 6）\n苗苗 → 陈望：熟（3 → 6）",
+      "order": 3
+    },
+    {
+      "kind": "unsaid",
+      "title": "没说出口的话",
+      "body": "五个人今天都有一句话没说出来，一共 5 句。",
+      "order": 4
+    }
+  ],
+  "unsays": [
+    {
+      "agent_id": "sample-seaside-chenwang",
+      "agent_name": "陈望",
+      "text": "陈望想说那封信他等了三年，最后只说了句钥匙留下。"
+    },
+    {
+      "agent_id": "sample-seaside-linxiaoman",
+      "agent_name": "林小满",
+      "text": "林小满想说的是其实我舍不得，出口却成了我会回来看看。"
+    },
+    {
+      "agent_id": "sample-seaside-zhouxiulan",
+      "agent_name": "周秀兰",
+      "text": "周秀兰终于打开了录音笔，录下的是楼道里很轻的一声猫叫。"
+    },
+    {
+      "agent_id": "sample-seaside-abiao",
+      "agent_name": "阿彪",
+      "text": "阿彪把车停在镇口，给儿子发了条消息，只有三个字：回家了。"
+    },
+    {
+      "agent_id": "sample-seaside-miaomiao",
+      "agent_name": "苗苗",
+      "text": "苗苗在码头的石壁上写下五个人的名字，潮水一来就没了。"
+    }
+  ]
+}

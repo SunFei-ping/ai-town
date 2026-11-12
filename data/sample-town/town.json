@@ -1,0 +1,51 @@
+{
+  "summary": "临海，人少，潮气重。留不住年轻人，也赶不走老人。",
+  "town": {
+    "id": "sample-seaside",
+    "name": "海边小镇（示例）",
+    "template_id": "seaside",
+    "pace_mode": "quick",
+    "status": "completed",
+    "day_index": 7,
+    "created_at": 1794240000000,
+    "last_tick_at": 1794844800000,
+    "schema_version": "1.0.0"
+  },
+  "agents": [
+    {
+      "id": "sample-seaside-chenwang",
+      "name": "陈望",
+      "age": 52,
+      "occupation": "五金店老板",
+      "persona": "丧偶三年，话少，每天六点开门，晚上一个人修收音机。"
+    },
+    {
+      "id": "sample-seaside-linxiaoman",
+      "name": "林小满",
+      "age": 24,
+      "occupation": "咖啡店老板",
+      "persona": "从城里回来开店，热情，但总在算账。三个月没回本。"
+    },
+    {
+      "id": "sample-seaside-zhouxiulan",
+      "name": "周秀兰",
+      "age": 61,
+      "occupation": "退休教师",
+      "persona": "爱管闲事，在编一本小镇的口述史，见谁都问两句。"
+    },
+    {
+      "id": "sample-seaside-abiao",
+      "name": "阿彪",
+      "age": 35,
+      "occupation": "货运司机",
+      "persona": "常年跑长途，回镇就喝酒，和妻子分居中。"
+    },
+    {
+      "id": "sample-seaside-miaomiao",
+      "name": "苗苗",
+      "age": 9,
+      "occupation": "小学生",
+      "persona": "周秀兰的孙女，放学后到处晃，是镇上唯一会直接说出真相的人。"
+    }
+  ]
+}

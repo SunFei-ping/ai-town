@@ -1,0 +1,60 @@
+{
+  "town_id": "sample-seaside",
+  "day": 3,
+  "headline": "第 3 天：阿彪的货车堵在五金店门口，两个人吵了两句",
+  "generation_mode": "backfill",
+  "generated_at": 1794499200000,
+  "sections": [
+    {
+      "kind": "headline",
+      "title": "头条",
+      "body": "第 3 天：阿彪的货车堵在五金店门口，两个人吵了两句",
+      "order": 1
+    },
+    {
+      "kind": "scene",
+      "title": "场景",
+      "body": "18 点，五金店门口。陈望：车挪一下，挡着门了。 阿彪：就停十分钟，你这店一天也没几个人。 陈望：嗯。",
+      "order": 2
+    },
+    {
+      "kind": "relation",
+      "title": "关系",
+      "body": "阿彪 → 陈望：生（0 → -4）\n陈望 → 阿彪：生（0 → -4）",
+      "order": 3
+    },
+    {
+      "kind": "unsaid",
+      "title": "没说出口的话",
+      "body": "五个人今天都有一句话没说出来，一共 5 句。",
+      "order": 4
+    }
+  ],
+  "unsays": [
+    {
+      "agent_id": "sample-seaside-abiao",
+      "agent_name": "阿彪",
+      "text": "阿彪想说那两万块不是不还，可话到嘴边变成了别挡门。"
+    },
+    {
+      "agent_id": "sample-seaside-chenwang",
+      "agent_name": "陈望",
+      "text": "陈望其实不介意车停多久，他只是不想一个人看店。"
+    },
+    {
+      "agent_id": "sample-seaside-miaomiao",
+      "agent_name": "苗苗",
+      "text": "苗苗在楼上看见他们吵架，数了数，一共只说了四句话。"
+    },
+    {
+      "agent_id": "sample-seaside-linxiaoman",
+      "agent_name": "林小满",
+      "text": "林小满听见吵声，想起自己上周也这样跟人红过脸。"
+    },
+    {
+      "agent_id": "sample-seaside-zhouxiulan",
+      "agent_name": "周秀兰",
+      "text": "周秀兰觉得这场架值得录，可她举着录音笔没敢按下去。"
+    }
+  ]
+}

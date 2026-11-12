@@ -1,0 +1,60 @@
+{
+  "town_id": "sample-seaside",
+  "day": 6,
+  "headline": "第 6 天：录音笔不见了，楼道里谁都不承认见过",
+  "generation_mode": "degraded",
+  "generated_at": 1794758400000,
+  "sections": [
+    {
+      "kind": "headline",
+      "title": "头条",
+      "body": "第 6 天：录音笔不见了，楼道里谁都不承认见过",
+      "order": 1
+    },
+    {
+      "kind": "scene",
+      "title": "场景",
+      "body": "9 点，楼道。周秀兰：我昨天放在窗台上的，怎么会没了？ 阿彪：别看我，我昨晚没上楼。 周秀兰：我也没说是你。 阿彪：那你问我干什么。",
+      "order": 2
+    },
+    {
+      "kind": "relation",
+      "title": "关系",
+      "body": "周秀兰 → 阿彪：生（0 → -4）\n阿彪 → 周秀兰：生（0 → -4）",
+      "order": 3
+    },
+    {
+      "kind": "unsaid",
+      "title": "没说出口的话",
+      "body": "五个人今天都有一句话没说出来，一共 5 句。",
+      "order": 4
+    }
+  ],
+  "unsays": [
+    {
+      "agent_id": "sample-seaside-zhouxiulan",
+      "agent_name": "周秀兰",
+      "text": "周秀兰知道录音笔在自己包里，可她需要一个理由跟阿彪说句话。"
+    },
+    {
+      "agent_id": "sample-seaside-abiao",
+      "agent_name": "阿彪",
+      "text": "阿彪想说他听见了楼上的动静，又怕把自己扯进别人的家事。"
+    },
+    {
+      "agent_id": "sample-seaside-chenwang",
+      "agent_name": "陈望",
+      "text": "陈望把捡到的纽扣放进抽屉，和那封信放在了一起。"
+    },
+    {
+      "agent_id": "sample-seaside-linxiaoman",
+      "agent_name": "林小满",
+      "text": "林小满收到了面试通知，把手机扣在桌上，很久没有翻开。"
+    },
+    {
+      "agent_id": "sample-seaside-miaomiao",
+      "agent_name": "苗苗",
+      "text": "苗苗看见周秀兰偷偷把录音笔塞回包里，决定替她保密。"
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "town_id": "sample-seaside",
+  "day": 4,
+  "headline": "第 4 天：林小满收到一封邮件，在咖啡店坐了一下午",
+  "generation_mode": "normal",
+  "generated_at": 1794585600000,
+  "sections": [
+    {
+      "kind": "headline",
+      "title": "头条",
+      "body": "第 4 天：林小满收到一封邮件，在咖啡店坐了一下午",
+      "order": 1
+    },
+    {
+      "kind": "scene",
+      "title": "场景",
+      "body": "15 点，咖啡店。周秀兰：你这店是不是要转了？ 林小满：没有，就是……在算账。 周秀兰：我跟你说，想走的人算不清账。",
+      "order": 2
+    },
+    {
+      "kind": "relation",
+      "title": "关系",
+      "body": "林小满 → 周秀兰：熟（0 → 3）\n周秀兰 → 林小满：熟（0 → 3）",
+      "order": 3
+    },
+    {
+      "kind": "unsaid",
+      "title": "没说出口的话",
+      "body": "五个人今天都有一句话没说出来，一共 5 句。",
+      "order": 4
+    }
+  ],
+  "unsays": [
+    {
+      "agent_id": "sample-seaside-linxiaoman",
+      "agent_name": "林小满",
+      "text": "林小满把那封面试邮件读了三遍，还是没敢点开回复框。"
+    },
+    {
+      "agent_id": "sample-seaside-zhouxiulan",
+      "agent_name": "周秀兰",
+      "text": "周秀兰看出林小满在撒谎，却没有追问，只把杯子推近了些。"
+    },
+    {
+      "agent_id": "sample-seaside-chenwang",
+      "agent_name": "陈望",
+      "text": "陈望把修好的收音机调到旧频道，想听一句熟悉的声音。"
+    },
+    {
+      "agent_id": "sample-seaside-miaomiao",
+      "agent_name": "苗苗",
+      "text": "苗苗问林小满咖啡为什么苦，其实她想问的是大人为什么都不说。"
+    },
+    {
+      "agent_id": "sample-seaside-abiao",
+      "agent_name": "阿彪",
+      "text": "阿彪在服务区给家里拨了号，响到第三声又挂断了。"
+    }
+  ]
+}

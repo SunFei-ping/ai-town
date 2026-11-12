@@ -1,0 +1,60 @@
+{
+  "town_id": "sample-seaside",
+  "day": 5,
+  "headline": "第 5 天：苗苗把本子落在码头，陈望替她收了一个下午",
+  "generation_mode": "normal",
+  "generated_at": 1794672000000,
+  "sections": [
+    {
+      "kind": "headline",
+      "title": "头条",
+      "body": "第 5 天：苗苗把本子落在码头，陈望替她收了一个下午",
+      "order": 1
+    },
+    {
+      "kind": "scene",
+      "title": "场景",
+      "body": "14 点，码头。苗苗：爷爷，你见过我奶奶的本子吗？ 陈望：什么样子的？ 苗苗：封面上有只猫。",
+      "order": 2
+    },
+    {
+      "kind": "relation",
+      "title": "关系",
+      "body": "陈望 → 苗苗：熟（0 → 3）\n苗苗 → 陈望：熟（0 → 3）",
+      "order": 3
+    },
+    {
+      "kind": "unsaid",
+      "title": "没说出口的话",
+      "body": "五个人今天都有一句话没说出来，一共 5 句。",
+      "order": 4
+    }
+  ],
+  "unsays": [
+    {
+      "agent_id": "sample-seaside-miaomiao",
+      "agent_name": "苗苗",
+      "text": "苗苗其实知道本子在书包里，她只是想找个人陪她说话。"
+    },
+    {
+      "agent_id": "sample-seaside-chenwang",
+      "agent_name": "陈望",
+      "text": "陈望翻遍码头，没找到本子，却在长椅下捡到一枚旧纽扣。"
+    },
+    {
+      "agent_id": "sample-seaside-linxiaoman",
+      "agent_name": "林小满",
+      "text": "林小满把简历的发送时间定在凌晨三点，那样就没人看见。"
+    },
+    {
+      "agent_id": "sample-seaside-zhouxiulan",
+      "agent_name": "周秀兰",
+      "text": "周秀兰听说本子丢了，先摸自己的口袋，又装作什么都没发生。"
+    },
+    {
+      "agent_id": "sample-seaside-abiao",
+      "agent_name": "阿彪",
+      "text": "阿彪答应明天回家吃饭，说完就把这句话忘在了方向盘上。"
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "town_id": "sample-seaside",
+  "day": 1,
+  "headline": "第 1 天：码头起了雾，陈望和林小满站了一会儿",
+  "generation_mode": "normal",
+  "generated_at": 1794326400000,
+  "sections": [
+    {
+      "kind": "headline",
+      "title": "头条",
+      "body": "第 1 天：码头起了雾，陈望和林小满站了一会儿",
+      "order": 1
+    },
+    {
+      "kind": "scene",
+      "title": "场景",
+      "body": "14 点，码头。陈望：今天风大，别把杯子端出来。 林小满：其实我就是出来透口气。 陈望：嗯。",
+      "order": 2
+    },
+    {
+      "kind": "relation",
+      "title": "关系",
+      "body": "陈望 → 林小满：熟（0 → 3）\n林小满 → 陈望：熟（0 → 3）",
+      "order": 3
+    },
+    {
+      "kind": "unsaid",
+      "title": "没说出口的话",
+      "body": "五个人今天都有一句话没说出来，一共 5 句。",
+      "order": 4
+    }
+  ],
+  "unsays": [
+    {
+      "agent_id": "sample-seaside-chenwang",
+      "agent_name": "陈望",
+      "text": "陈望把想问她生意怎么样的话咽了回去，只说了一句风大。"
+    },
+    {
+      "agent_id": "sample-seaside-linxiaoman",
+      "agent_name": "林小满",
+      "text": "林小满没告诉陈望，她的简历已经投到了三百公里外。"
+    },
+    {
+      "agent_id": "sample-seaside-zhouxiulan",
+      "agent_name": "周秀兰",
+      "text": "周秀兰想问陈望那封信的事，最后还是把录音笔按停了。"
+    },
+    {
+      "agent_id": "sample-seaside-abiao",
+      "agent_name": "阿彪",
+      "text": "阿彪在车里睡了一下午，没敢推开五金店那扇门。"
+    },
+    {
+      "agent_id": "sample-seaside-miaomiao",
+      "agent_name": "苗苗",
+      "text": "苗苗想把码头的雾画下来，可她找不到一支能出水的笔。"
+    }
+  ]
+}

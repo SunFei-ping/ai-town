@@ -1,0 +1,60 @@
+{
+  "town_id": "sample-seaside",
+  "day": 2,
+  "headline": "第 2 天：周秀兰带着苗苗，从一楼问到六楼",
+  "generation_mode": "normal",
+  "generated_at": 1794412800000,
+  "sections": [
+    {
+      "kind": "headline",
+      "title": "头条",
+      "body": "第 2 天：周秀兰带着苗苗，从一楼问到六楼",
+      "order": 1
+    },
+    {
+      "kind": "scene",
+      "title": "场景",
+      "body": "10 点，楼道。周秀兰：我跟你说，这栋楼以前住过唱戏的。 苗苗：为什么他不知道？ 周秀兰：因为没人问。\n15 点，咖啡店。林小满：奶奶，您今天问了几家了？ 周秀兰：四家，还差一家。",
+      "order": 2
+    },
+    {
+      "kind": "relation",
+      "title": "关系",
+      "body": "周秀兰 → 苗苗：熟（0 → 3）\n苗苗 → 周秀兰：熟（0 → 3）",
+      "order": 3
+    },
+    {
+      "kind": "unsaid",
+      "title": "没说出口的话",
+      "body": "五个人今天都有一句话没说出来，一共 5 句。",
+      "order": 4
+    }
+  ],
+  "unsays": [
+    {
+      "agent_id": "sample-seaside-zhouxiulan",
+      "agent_name": "周秀兰",
+      "text": "周秀兰问遍了整栋楼，唯独没问自己为什么一直不写自己。"
+    },
+    {
+      "agent_id": "sample-seaside-miaomiao",
+      "agent_name": "苗苗",
+      "text": "苗苗把周秀兰问别人的问题记在本子上，打算明天问她。"
+    },
+    {
+      "agent_id": "sample-seaside-chenwang",
+      "agent_name": "陈望",
+      "text": "陈望听见楼道里的脚步声，想起老婆以前也是这样挨家串门。"
+    },
+    {
+      "agent_id": "sample-seaside-linxiaoman",
+      "agent_name": "林小满",
+      "text": "林小满算到第三遍账，还是没敢把亏损的数字说出口。"
+    },
+    {
+      "agent_id": "sample-seaside-abiao",
+      "agent_name": "阿彪",
+      "text": "阿彪把车钥匙攥出汗，也没想好回家该先叫谁的名字。"
+    }
+  ]
+}
