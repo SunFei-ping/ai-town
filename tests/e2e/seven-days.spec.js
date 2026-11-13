@@ -6,10 +6,16 @@ import { makeContext, parseSSE } from '../support/tick.js';
 
 const RUNS = 3;
 const DAYS = 7;
+const REMOTE = process.env.E2E_REMOTE === '1';
+const REMOTE_API_KEY = process.env.DEEPSEEK_API_KEY ?? '';
+const TOWN_ID = process.env.E2E_TOWN_ID ?? 'town-seven';
+
+test.skip(REMOTE && !REMOTE_API_KEY, 'E2E_REMOTE 模式需要 DEEPSEEK_API_KEY');
 
 async function openSession(request, run, day) {
+  const apiKey = REMOTE ? REMOTE_API_KEY : `sk-seven-days-${run}-${day}-1234567890`;
   const res = await request.post('/v1/session', {
-    data: { api_key: `sk-seven-days-${run}-${day}-1234567890` },
+    data: { api_key: apiKey },
   });
   expect(res.status()).toBe(200);
   const body = await res.json();
@@ -17,21 +23,23 @@ async function openSession(request, run, day) {
 }
 
 test('seven-days：真实链路连续三次跑完七天（V1 / V4 / V5）', async ({ request }) => {
-  test.setTimeout(180000);
+  // 远端真实模型每天约 10 秒，21 天预留 15 分钟
+  test.setTimeout(REMOTE ? 900000 : 180000);
 
   const records = [];
+  const reviews = [];
 
   for (let run = 0; run < RUNS; run += 1) {
     for (let day = 1; day <= DAYS; day += 1) {
       const token = await openSession(request, run, day);
       const started = Date.now();
-      const res = await request.post('/v1/towns/town-seven/tick', {
+      const res = await request.post(`/v1/towns/${TOWN_ID}/tick`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
           'Idempotency-Key': `run-${run}-day-${day}`,
         },
-        data: { day_index: day, context: makeContext({ townId: 'town-seven', day }) },
+        data: { day_index: day, context: makeContext({ townId: TOWN_ID, day }) },
       });
 
       const text = await res.text();
@@ -42,7 +50,9 @@ test('seven-days：真实链路连续三次跑完七天（V1 / V4 / V5）', asyn
       const error = frames.find((frame) => frame.event === 'error');
       expect(error, `第 ${run + 1} 轮第 ${day} 天不应有 error 帧`).toBeUndefined();
       expect(done, `第 ${run + 1} 轮第 ${day} 天缺少 done 帧`).toBeTruthy();
-      expect(frames.filter((frame) => frame.event === 'report_ready')).toHaveLength(1);
+      const reportFrame = frames.find((frame) => frame.event === 'report_ready');
+      expect(reportFrame, `第 ${run + 1} 轮第 ${day} 天缺少 report_ready 帧`).toBeTruthy();
+      reviews.push({ run: run + 1, day, report: reportFrame.data.report });
 
       records.push({
         run: run + 1,
@@ -52,6 +62,18 @@ test('seven-days：真实链路连续三次跑完七天（V1 / V4 / V5）', asyn
         usage: done.data.usage,
       });
     }
+  }
+
+  // 保存每天的小报，供 §12.3 主观评审使用
+  const reviewRoot = resolve('test-results/quality-review');
+  for (const item of reviews) {
+    const runDir = resolve(reviewRoot, `run-${item.run}`);
+    await mkdir(runDir, { recursive: true });
+    await writeFile(
+      resolve(runDir, `day-${item.day}.json`),
+      `${JSON.stringify(item.report, null, 2)}\n`,
+      'utf8'
+    );
   }
 
   const report = summarizeTicks(records);

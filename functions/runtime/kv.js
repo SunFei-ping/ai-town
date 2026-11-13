@@ -43,17 +43,37 @@ export function digest(value) {
   return `${h1.toString(16).padStart(8, '0')}${h2.toString(16).padStart(8, '0')}`;
 }
 
+function isPlatformKV(kv) {
+  return typeof kv?.put === 'function';
+}
+
 async function read(kv, key) {
   if (!kv) return undefined;
-  if (typeof kv.get === 'function') return kv.get(key);
+  if (typeof kv.get === 'function') {
+    const raw = await kv.get(key);
+    if (isPlatformKV(kv) && typeof raw === 'string') {
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return raw;
+      }
+    }
+    return raw;
+  }
   return undefined;
 }
 
 async function write(kv, key, value, ttlSeconds) {
   if (!kv) return false;
-  if (typeof kv.put === 'function') {
-    // Cloudflare KV 风格
-    await kv.put(key, value, ttlSeconds ? { expirationTtl: ttlSeconds } : undefined);
+  if (isPlatformKV(kv)) {
+    // Cloudflare KV 只接受字符串/二进制，结构化值统一按 JSON 存取；
+    // 同时 expirationTtl 必须是 ≥60 的整数，短窗口限流键按 60 秒兜底
+    const ttl = ttlSeconds ? Math.max(60, Math.ceil(ttlSeconds)) : undefined;
+    await kv.put(
+      key,
+      JSON.stringify(value ?? null),
+      ttl ? { expirationTtl: ttl } : undefined
+    );
     return true;
   }
   if (typeof kv.set === 'function') {

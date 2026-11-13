@@ -13,10 +13,15 @@ import { USAGE_STAGES } from '../../../shared/contracts/index.js';
 export const SECRET_FALLBACK = '有些话，想了想，还是没说出口。';
 
 const SEPARATORS = /[^\p{L}\p{N}]+/gu;
+/** 专名（老赵 / 小满 / 阿彪）或明确的数量词，才允许作为 2 字敏感片段 */
+const DISTINCTIVE_SHORT =
+  /^[老小阿][\p{L}]$|^[0-9]+(?:万|千|百|块|元|岁)?$|^[一二三四五六七八九十百千万亿两]+(?:万|千|百|块|元|岁)$/u;
+/** 整段复述达到该长度才判为词表泄露，避免常用词误伤正常对话 */
+const MIN_PHRASE_LENGTH = 5;
 
 /**
- * 抽取敏感词：整段短语 + 非重叠 2 字片段（无分词器时的近似做法）。
- * 词表只用于「宁可多拦」的泄露检测，不参与生成。
+ * 抽取敏感词：完整短语 + 5 字滑窗 + 有辨识度的专名/数量片段。
+ * 不把每个 2 字碎片都当敏感词，否则「人的」「一个」「故事」会误伤正常对话。
  */
 export function extractSecretTerms(secret) {
   if (typeof secret !== 'string' || secret.trim() === '') return [];
@@ -25,9 +30,16 @@ export function extractSecretTerms(secret) {
   for (const segment of secret.split(SEPARATORS)) {
     const phrase = segment.trim();
     if (phrase.length < 2) continue;
-    terms.add(phrase);
+
+    if (phrase.length >= MIN_PHRASE_LENGTH) terms.add(phrase);
+
     for (let index = 0; index + 2 <= phrase.length; index += 2) {
-      terms.add(phrase.slice(index, index + 2));
+      const bigram = phrase.slice(index, index + 2);
+      if (DISTINCTIVE_SHORT.test(bigram)) terms.add(bigram);
+    }
+
+    for (let index = 0; index + MIN_PHRASE_LENGTH <= phrase.length; index += 1) {
+      terms.add(phrase.slice(index, index + MIN_PHRASE_LENGTH));
     }
   }
 

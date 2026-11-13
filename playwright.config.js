@@ -1,5 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
+const remote = process.env.E2E_REMOTE === '1';
+const baseURL = process.env.E2E_BASE_URL ?? 'http://127.0.0.1:4183';
+
 export default defineConfig({
   testDir: './tests/e2e',
   timeout: 20000,
@@ -8,15 +11,18 @@ export default defineConfig({
   workers: 1,
   reporter: [['list']],
   use: {
-    baseURL: 'http://127.0.0.1:4183',
+    baseURL,
     headless: true,
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
-  webServer: {
-    command: 'node scripts/dev-server.mjs',
-    url: 'http://127.0.0.1:4183/',
-    reuseExistingServer: true,
-    timeout: 20000,
-    env: { ...process.env, PORT: '4183', MODEL_MODE: 'stub' },
-  },
+  // E2E_REMOTE=1 时不启动本地桩服务，直接打远端真实环境
+  webServer: remote
+    ? undefined
+    : {
+        command: 'node scripts/dev-server.mjs',
+        url: 'http://127.0.0.1:4183/',
+        reuseExistingServer: true,
+        timeout: 20000,
+        env: { ...process.env, PORT: '4183', MODEL_MODE: 'stub' },
+      },
 });

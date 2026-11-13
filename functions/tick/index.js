@@ -341,7 +341,6 @@ export async function runTick({
 
   machine.to('done');
   const usage = summarizeUsage(usageRecords, prices);
-  emit('done', { day_index: dayIndex, usage });
 
   return {
     state: machine.state,
@@ -470,25 +469,52 @@ function createTickStream({
     scheduleSave();
   }
 
-  async function finish() {
+  async function finish(finalData = null) {
     if (finished) return;
     finished = true;
     clearInterval(heartbeat);
     clearTimeout(deadline);
-    await saveChain;
-    snapshot.done = true;
-    snapshot.frames = frames.slice();
-    await rkv.saveSnapshot(townId, dayIndex, snapshot);
-    if (idemKey) {
-      await rkv.putIdempotent(townId, idemKey, {
-        tick_id: currentTickId,
-        town_id: townId,
-        day_index: dayIndex,
-        done: true,
-        frames: frames.slice(),
-      });
+
+    try {
+      await saveChain;
+    } catch {
+      /* 快照写入失败不阻塞收尾 */
     }
-    await rkv.releaseTick(townId, currentTickId);
+    try {
+      // 先释放占位：客户端收到 done 后立刻推进下一天不会撞锁
+      await rkv.releaseTick(townId, currentTickId);
+    } catch {
+      /* 释放失败交给 TTL 兜底 */
+    }
+
+    if (finalData && !closed) {
+      lastId += 1;
+      const frame = { id: lastId, event: 'done', data: finalData };
+      frames.push(frame);
+      try {
+        controllerRef.enqueue(encoder.encode(encodeFrame(frame.id, frame.event, frame.data)));
+      } catch {
+        closed = true;
+      }
+    }
+
+    try {
+      snapshot.done = true;
+      snapshot.frames = frames.slice();
+      await rkv.saveSnapshot(townId, dayIndex, snapshot);
+      if (idemKey) {
+        await rkv.putIdempotent(townId, idemKey, {
+          tick_id: currentTickId,
+          town_id: townId,
+          day_index: dayIndex,
+          done: true,
+          frames: frames.slice(),
+        });
+      }
+    } catch {
+      /* 快照与幂等键写入失败时，done 已经发出，客户端可继续 */
+    }
+
     closed = true;
     try {
       controllerRef.close();
@@ -522,8 +548,9 @@ function createTickStream({
       }, timeoutMs);
 
       (async () => {
+        let finalData = null;
         try {
-          await runTick({
+          const result = await runTick({
             townId,
             dayIndex,
             context,
@@ -535,6 +562,7 @@ function createTickStream({
             prices,
             warnings,
           });
+          finalData = { day_index: dayIndex, usage: result.usage };
         } catch (err) {
           const code = Object.hasOwn(ERROR_CODES, err?.code)
             ? err.code
@@ -545,7 +573,7 @@ function createTickStream({
             retryable: ERROR_RETRYABLE[code] ?? false,
           });
         } finally {
-          await finish();
+          await finish(finalData);
         }
       })();
     },

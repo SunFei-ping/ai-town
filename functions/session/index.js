@@ -91,8 +91,12 @@ export default async function handler({ method, headers, body, kv, env, fetchImp
     const keyRef = `ref_${globalThis.crypto?.randomUUID?.() ?? Date.now()}`;
 
     SESSION_STORE.set(token, { apiKey, keyRef, expiresAt });
-    // 会话索引只保存不透明引用，绝不在 KV 中留下 Key
-    await runtimeKV?.putSessionIndex(token, keyRef);
+    // 会话索引只保存不透明引用，绝不在 KV 中留下 Key；索引失败不阻塞会话
+    try {
+      await runtimeKV?.putSessionIndex(token, keyRef);
+    } catch {
+      /* 边缘 KV 不可用时仍允许当前实例内的会话继续使用 */
+    }
 
     return {
       status: 200,

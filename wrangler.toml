@@ -12,7 +12,7 @@ MODEL_NAME = "deepseek-chat"
 
 [[kv_namespaces]]
 binding = "AI_TOWN_KV"
-id = "REPLACE_WITH_PRODUCTION_KV_ID"
+id = "37b2a877d7144bd2861e7f0e1b0b983d"
 
 [env.preview]
 name = "ai-town-api-preview"
@@ -23,7 +23,7 @@ MODEL_NAME = "deepseek-chat"
 
 [[env.preview.kv_namespaces]]
 binding = "AI_TOWN_KV"
-id = "REPLACE_WITH_PREVIEW_KV_ID"
+id = "f136bdf91fde449bb2d749f72dc0ea4d"
 
 [env.production]
 name = "ai-town-api"
@@ -34,4 +34,4 @@ MODEL_NAME = "deepseek-chat"
 
 [[env.production.kv_namespaces]]
 binding = "AI_TOWN_KV"
-id = "REPLACE_WITH_PRODUCTION_KV_ID"
+id = "37b2a877d7144bd2861e7f0e1b0b983d"

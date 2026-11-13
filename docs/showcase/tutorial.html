@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>我把五个 AI 关进海边小镇，7 天后他们开始瞒着彼此</title>
+    <style>
+      @media print {
+        figure,
+        pre {
+          break-inside: avoid;
+        }
+        h2 {
+          break-after: avoid;
+        }
+      }
+    </style>
+  </head>
+  <body style="margin:0;padding:0;background:#f4f2ec;">
+    <section style="max-width:680px;margin:0 auto;padding:28px 18px 48px;background:#fff;font-family:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei',sans-serif;color:#2b2b2b;font-size:16px;line-height:1.9;">
+      <p style="margin:0 0 10px;font-size:13px;letter-spacing:1px;color:#8a857c;">AI 小镇实验 · 01</p>
+      <h1 style="margin:0 0 14px;font-size:26px;line-height:1.4;font-weight:700;color:#1f1f1f;">我把五个 AI 关进海边小镇，7 天后他们开始瞒着彼此</h1>
+      <p style="margin:0 0 26px;font-size:15px;color:#6f6a62;">一个只能围观、不能指挥的 AI 小镇实验</p>
+
+      <p style="margin:0 0 18px;">大多数 AI 产品都在替你干活。我想做点反过来的事：让 AI 自己过日子，你只负责看。</p>
+      <p style="margin:0 0 18px;">于是有了 <strong>AI小镇</strong>：5 个居民，7 天，每天一份小报。你不能指挥他们，只能围观、每天投递一件外部事件，然后等第二天。</p>
+
+      <h2 style="margin:32px 0 14px;padding-left:12px;border-left:4px solid #2f6f6a;font-size:19px;line-height:1.5;">01 先看，再决定要不要开一局</h2>
+      <p style="margin:0 0 18px;">首页内置了一座跑完 7 天的「海边小镇（示例）」。不需要登录，不需要 Key，断网也能看。切换第 1 天到第 7 天，你能看到每天的头条、场景、关系变化，以及五个人各自「没说出口的话」。</p>
+      <figure style="margin:22px 0 26px;">
+        <img src="./assets/01-home.png" alt="首页示例镇与小报" style="display:block;width:100%;border-radius:14px;border:1px solid #e8e4dc;" />
+        <figcaption style="margin-top:8px;font-size:13px;color:#8a857c;text-align:center;">示例镇第 7 天：关系、头条与五条 unsaid 都在同一页</figcaption>
+      </figure>
+
+      <h2 style="margin:32px 0 14px;padding-left:12px;border-left:4px solid #2f6f6a;font-size:19px;line-height:1.5;">02 建镇：五个人，各有各的秘密</h2>
+      <p style="margin:0 0 18px;">点「建我的小镇」，可以先选模板：海边小镇、大学城后街、老城区拆迁楼。每套模板固定 5 个居民，名字、年龄、职业、人设都能改。</p>
+      <p style="margin:0 0 18px;">每个人还有一个 <strong>secret</strong> 和一个 <strong>conflict_goal</strong>。秘密不会写进对话，只影响他怎么说、怎么躲；冲突目标决定他这一天想争什么、怕什么。小报好不好看，很大程度取决于这两栏写得够不够具体。</p>
+      <figure style="margin:22px 0 26px;">
+        <img src="./assets/03-create.png" alt="建镇页与居民设定" style="display:block;width:100%;border-radius:14px;border:1px solid #e8e4dc;" />
+        <figcaption style="margin-top:8px;font-size:13px;color:#8a857c;text-align:center;">建镇页：模板、小镇名、节奏与 5 个居民</figcaption>
+      </figure>
+
+      <h2 style="margin:32px 0 14px;padding-left:12px;border-left:4px solid #2f6f6a;font-size:19px;line-height:1.5;">03 过一天：你只能投递事件，不能下命令</h2>
+      <p style="margin:0 0 18px;">进入「小镇」页，填入自己的模型 API Key，点「连接模型」。Key 只用来换一个 2 小时会话，不写进本地存储；不填也能用本地桩模型体验流程。</p>
+      <p style="margin:0 0 18px;">每天可以投递 1 条外部事件，比如「连下三天雨」「码头来了艘陌生渔船」。注意，你只能描述外部发生的事，不能写「让陈望去表白」这种指令。</p>
+      <p style="margin:0 0 18px;">点「过一天」后，状态会依次经过校验、计划、行动、独白、成稿。五个居民先各自做计划，再按小时移动、相遇、对话，最后生成当天的小报。</p>
+      <figure style="margin:22px 0 26px;">
+        <img src="./assets/04-town.png" alt="小镇页：模型连接与事件投递" style="display:block;width:100%;border-radius:14px;border:1px solid #e8e4dc;" />
+        <figcaption style="margin-top:8px;font-size:13px;color:#8a857c;text-align:center;">每天 1 条外部事件，点「过一天」开始推进</figcaption>
+      </figure>
+      <figure style="margin:22px 0 26px;">
+        <img src="./assets/04c-scene.png" alt="3D 小镇场景" style="display:block;width:100%;border-radius:14px;border:1px solid #e8e4dc;" />
+        <figcaption style="margin-top:8px;font-size:13px;color:#8a857c;text-align:center;">五个居民在同一个场景里移动，点名字可以跟随</figcaption>
+      </figure>
+
+      <h2 style="margin:32px 0 14px;padding-left:12px;border-left:4px solid #2f6f6a;font-size:19px;line-height:1.5;">04 结果：一份小报，四个版块，五句没说出口的话</h2>
+      <p style="margin:0 0 18px;">每天结束后会生成一份小报，固定四个版块：头条、场景、关系、没说出口的话。关系会显示「谁 → 谁，从多少变到多少」；五条 unsaid 必须一一对应五个居民。</p>
+      <p style="margin:0 0 18px;">你还可以看关系图、导出分享长图，或者把整座镇导出成 <code style="padding:2px 6px;border-radius:4px;background:#f1efe9;font-size:14px;">town.json</code> 和 <code style="padding:2px 6px;border-radius:4px;background:#f1efe9;font-size:14px;">town.md</code>。JSON 可以回导，接着当前天数继续推进。</p>
+      <figure style="margin:22px 0 26px;">
+        <img src="./assets/02-report.png" alt="小报详情" style="display:block;width:100%;border-radius:14px;border:1px solid #e8e4dc;" />
+        <figcaption style="margin-top:8px;font-size:13px;color:#8a857c;text-align:center;">小报四版块与五条 unsaid</figcaption>
+      </figure>
+      <figure style="margin:22px 0 26px;">
+        <img src="./assets/05-mobile-report.png" alt="移动端小报" style="display:block;width:100%;border-radius:14px;border:1px solid #e8e4dc;" />
+        <figcaption style="margin-top:8px;font-size:13px;color:#8a857c;text-align:center;">375px 移动端：无横向溢出，适合直接截图分享</figcaption>
+      </figure>
+
+      <h2 style="margin:32px 0 14px;padding-left:12px;border-left:4px solid #2f6f6a;font-size:19px;line-height:1.5;">05 幕后：为什么它不像一个游戏</h2>
+      <p style="margin:0 0 18px;">小镇、居民、记忆、剧情全部存在浏览器 IndexedDB 里，服务端不持久化你的剧情。边缘 KV 只保存短 TTL 的运行态：推进占位、限流计数、幂等键和续传快照，里面没有剧情正文。</p>
+      <p style="margin:0 0 18px;">记忆分三层：当天事件、每日总结、对人的印象。关系值单日最多变化 ±8，三天没互动会衰减。模型只负责「这一天」，不负责记住整座镇。</p>
+      <p style="margin:0 0 18px;">开发中最难的不是让模型说话，而是让它别说漏秘密。早期词表把「人的」「一个」「故事」这类常用词当成敏感词，正常对话被替换成一串省略号。后来收紧成 5 字以上短语加专名、数量词，故事才恢复正常。</p>
+      <p style="margin:0 0 18px;">真实模型连续跑 3 局 × 7 天：P95 13.1 秒，单轮最高成本 0.05 元。它不是那种要你天天上线的游戏，更像一份每天更新一小段的连载。</p>
+
+      <h2 style="margin:32px 0 14px;padding-left:12px;border-left:4px solid #2f6f6a;font-size:19px;line-height:1.5;">06 怎么玩</h2>
+      <p style="margin:0 0 18px;">在线 Demo：<a href="https://preview.ai-town-5ts.pages.dev" style="color:#2f6f6a;text-decoration:none;border-bottom:1px solid #b9d3cf;">preview.ai-town-5ts.pages.dev</a>。首页直接看示例镇；想开自己的镇，再准备一个 DeepSeek 或 OpenAI 兼容的 Key。</p>
+      <p style="margin:0 0 18px;">想在本地跑：</p>
+      <pre style="margin:0 0 22px;padding:14px 16px;background:#1f2423;color:#e8efe9;border-radius:10px;font-size:13px;line-height:1.7;overflow:auto;"><code>npm install
+npm run dev
+# 打开 http://127.0.0.1:4173</code></pre>
+      <p style="margin:0 0 24px;">如果你也好奇五个普通人七天能发生什么，去看看。它不会给你答案，只会给你一份小报。</p>
+
+      <p style="margin:30px 0 0;padding-top:18px;border-top:1px solid #ece8df;font-size:13px;color:#8a857c;">AI小镇 · 只能围观，不能指挥</p>
+    </section>
+  </body>
+</html>

@@ -18,6 +18,7 @@
  *   npm run deploy:preview -- --dry-run
  */
 import { spawnSync } from 'node:child_process';
+import { cpSync, mkdirSync, readdirSync, rmSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -44,7 +45,8 @@ function run(command, commandArgs, extraEnv = {}) {
     cwd: root,
     stdio: 'inherit',
     env: { ...process.env, ...extraEnv },
-    shell: false,
+    // Windows 下 .cmd 必须经由 shell 执行，否则 Node 会报 EINVAL
+    shell: process.platform === 'win32' && command.endsWith('.cmd'),
   });
   if (result.error) fail(`执行失败：${result.error.message}`);
   if (result.status !== 0) fail(`命令失败（exit ${result.status}）：${printable}`);
@@ -76,16 +78,28 @@ if (!dryRun) {
 }
 
 console.log(`[deploy] 环境：${deployEnv}${dryRun ? '（dry-run）' : ''}`);
-console.log(`[deploy] 静态：web/ → ${project ?? '<CF_PAGES_PROJECT>'}`);
+console.log(`[deploy] 静态：web/ + data/ + shared/ → ${project ?? '<CF_PAGES_PROJECT>'}`);
 console.log(`[deploy] 函数：functions/worker.js → ai-town-api-${deployEnv}`);
 console.log(`[deploy] 校验地址：${baseUrl || '<BASE_URL>'}`);
+
+// 静态站需要同时包含 web/、data/ 与 shared/（模板、示例镇与共享契约），否则线上会回落到 index.html
+const stageDir = join(root, '.deploy', 'static');
+if (!dryRun) {
+  rmSync(stageDir, { recursive: true, force: true });
+  mkdirSync(stageDir, { recursive: true });
+  for (const entry of readdirSync(join(root, 'web'))) {
+    cpSync(join(root, 'web', entry), join(stageDir, entry), { recursive: true });
+  }
+  cpSync(join(root, 'data'), join(stageDir, 'data'), { recursive: true });
+  cpSync(join(root, 'shared'), join(stageDir, 'shared'), { recursive: true });
+}
 
 // 1) 静态资源
 run(npxBin(), [
   'wrangler',
   'pages',
   'deploy',
-  'web',
+  stageDir,
   '--project-name',
   project ?? 'ai-town',
   '--branch',

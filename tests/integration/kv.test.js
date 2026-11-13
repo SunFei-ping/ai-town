@@ -109,4 +109,38 @@ describe('边缘 KV（kv）', () => {
     expect(await runtime.getTick('town-x')).toMatchObject({ tick_id: 'tick-x' });
     expect(await runtime.releaseTick('town-x', 'tick-x')).toBe(true);
   });
+
+  it('兼容只接受字符串的 Cloudflare KV：结构化值按 JSON 存取', async () => {
+    const store = new Map();
+    const platformKV = {
+      async put(key, value, options) {
+        if (typeof value !== 'string') throw new Error('KV PUT failed: value must be a string');
+        const ttl = options?.expirationTtl;
+        if (ttl !== undefined && (!Number.isInteger(ttl) || ttl < 60)) {
+          throw new Error('KV PUT failed: expirationTtl must be at least 60');
+        }
+        store.set(key, value);
+      },
+      async get(key) {
+        return store.get(key);
+      },
+      async delete(key) {
+        store.delete(key);
+      },
+    };
+    const runtime = createRuntimeKV(platformKV);
+
+    // 限流键的窗口剩余时间可能不足 60 秒，必须被兜底为 60
+    const rate = await runtime.rateLimit('sess-cf');
+    expect(rate.allowed).toBe(true);
+
+    expect(await runtime.acquireTick('town-cf', 'tick-cf')).toBe(true);
+    expect(await runtime.getTick('town-cf')).toMatchObject({ tick_id: 'tick-cf' });
+
+    await runtime.putSessionIndex('sess-cf', 'ref-cf');
+    expect(await runtime.getSessionIndex('sess-cf')).toMatchObject({ key_ref: 'ref-cf' });
+
+    await runtime.saveSnapshot('town-cf', 1, { done: true });
+    expect(await runtime.getSnapshot('town-cf', 1)).toEqual({ done: true });
+  });
 });

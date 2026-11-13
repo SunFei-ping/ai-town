@@ -1,8 +1,13 @@
 # AI小镇 · 任务分解（task.md）
 
-> 版本 v1.1 ｜ 2026-11-12 ｜ 依据 `docs/spcd.md` v1.2
+> 版本 v1.6 ｜ 2026-11-13 ｜ 依据 `docs/spcd.md` v1.2
 > 原则：**只实现 SPCD 已定义的内容，不新增功能**。任何任务若需要超出 SPCD 的行为，必须先在 SPCD 补章节。
 > v1.1 状态回写：M0–M6 代码与本地用例已完成；模板端点已补齐（P0-1）；preview 部署因缺外部凭据阻塞（P0-2）；真实模型复测待部署后执行。任务状态见 §9。
+> v1.2 状态回写：§12.3 剧情质量规则项已自动化（`tests/contract/quality.test.js`），记录见 §9.5。
+> v1.3 状态回写：三套模板文案与示例小镇数据说明已独立成文（`docs/data.md`）。
+> v1.4 状态回写：M6-07 已完成，preview 上线（Pages + Worker + Pages Functions 同源代理），`smoke:remote` 通过，见 §9.4。
+> v1.5 状态回写：真实模型 3×7 远端用例通过，M5-02 / M5-08 完成，V1/V4/V5 指标见 §9.1。
+> v1.6 状态回写：§12.3 主观评审完成首轮（3/3「能看」），并修复 C5 词表误伤，见 §9.5。
 
 ---
 
@@ -56,8 +61,8 @@
 | M2 | 7 | 五人互动 | 已完成 |
 | M3 | 6 | 记忆分层与关系 | 已完成 |
 | M4 | 7 | 小报 | 已完成 |
-| M5 | 8 | 真实模型与流式 | 已完成（真实链路待复测） |
-| M6 | 7 | 事件、分享、导出、补算 | 6 项已完成，M6-07 阻塞 |
+| M5 | 8 | 真实模型与流式 | 已完成 |
+| M6 | 7 | 事件、分享、导出、补算 | 已完成 |
 | 合计 | 47 | | |
 
 ---
@@ -642,7 +647,7 @@ graph TD
 - [x] `Last-Event-ID` 续传可用，已完成阶段不重复调用模型
 - [x] Key 仅内存驻留；日志与 KV 中无明文 Key
 - [x] 边缘 KV 四类键均按 TTL 生效
-- [ ] 单局成本 ≤5 元；超限可降级且不中断（桩模型链路 3/3 通过，`test-results/metrics.json`；真实模型待 preview 后复测）
+- [x] 单局成本 ≤5 元；超限可降级且不中断（真实模型 3×7：`max_run_cost_yuan=0.050268`，总成本 0.138821 元，`test-results/metrics.json`）
 
 ### 6.2 前端
 
@@ -660,14 +665,15 @@ graph TD
 - [x] 单元测试覆盖 C1–C9 全部约束的负向用例
 - [x] 契约测试覆盖全部端点、上下文、模板与小报结构，含快照（含模板端点 5 条）
 - [x] 集成测试覆盖 tick 全链路、续传、护栏、补算、导出回导
-- [x] 端到端覆盖垂直切片、七天真实跑通、示例镇离线（本地为桩模型 3/3；真实模型待复测）
-- [ ] 剧情质量规则项自动可跑，主观项有记录
+- [x] 端到端覆盖垂直切片、七天真实跑通、示例镇离线（真实模型 3×7 连续通过，P95 13.1 秒）
+- [x] 剧情质量规则项自动可跑；主观项完成首轮记录（3/3「能看」，见 §9.5）
 
 ### 6.4 文档
 
 - [x] `docs/spcd.md` 与实际实现一致，偏差已回写（v1.2 附录 C）
-- [ ] `docs/task.md` 全部任务状态为完成（M6-07 待外部凭据）
-- [ ] 示例小镇与三套模板的数据说明齐备（数据结构见 spcd §7.4 / 附录 C；模板文案的独立说明仍缺）
+- [x] `docs/task.md` 全部任务状态为完成（47/47）
+- [x] 示例小镇与三套模板的数据说明齐备（结构见 spcd §7.4 / 附录 C；模板文案与示例数据说明见 `docs/data.md`）
+- [x] 提交材料：README、图文教程、创作说明（`README.md` / `docs/showcase/tutorial.html` / `docs/submission.md`）
 - [x] 附录 B 的待确认项均有结论或明确遗留说明
 
 ---
@@ -719,7 +725,10 @@ Q1、Q2 仍是唯一可能影响里程碑门槛的外部变量。
 | 待复测 | 本地桩链路通过，真实模型或远端环境尚未验证 |
 | 阻塞 | 依赖外部凭据，无法在本地完成 |
 
-最近一次本地验证：`check:structure`、`check:tokens`、`test:contract`（48 条）、`test:unit`（91 条）、`test:integration`（60 条）全部通过；`test:e2e` 18 条全量通过。
+最近一次本地验证：`check:structure`、`check:tokens`、`test:contract`（52 条）、`test:unit`（92 条）、`test:integration`（61 条）全部通过；`test:e2e` 18 条全量通过。
+2026-11-13 preview 部署完成：`npm run deploy:preview && npm run smoke:remote` 通过（`/v1/health` version 1.0.0）。
+2026-11-13 真实模型远端验证：`E2E_REMOTE=1 npm run test:e2e -- --grep "seven-days"` 3×7 通过；V1 3/3、V4 P95 13135ms、V5 单轮最高 0.050268 元（`test-results/metrics.json`）。
+2026-11-13 主观评审：海边小镇模板 3 局×7 天，3/3「能看」（§9.5）。
 
 ### 9.2 里程碑状态
 
@@ -730,24 +739,53 @@ Q1、Q2 仍是唯一可能影响里程碑门槛的外部变量。
 | M2 | 已完成 | plan-parallel / encounter / dialogue / relation 用例通过 |
 | M3 | 已完成 | memory-tier / compress / impression / secret-guard / v3-recall 通过 |
 | M4 | 已完成 | 小报契约与渲染 e2e、示例镇离线 e2e 通过 |
-| M5 | 已完成（待复测） | 模型适配、SSE、续传、错误码、护栏均有本地用例；真实 Key 与真实模型未验证 |
-| M6 | 6/7 完成 | 事件、分享长图、导出回导、补算完成；M6-07 部署阻塞 |
+| M5 | 已完成 | 模型适配、SSE、续传、错误码、护栏本地用例通过；真实 Key 校验与 3×7 真实模型远端用例通过 |
+| M6 | 已完成 | 事件、分享长图、导出回导、补算完成；M6-07 preview 上线，`smoke:remote` 通过 |
 
 ### 9.3 逐项例外
 
 | 任务 | 状态 | 说明 |
 |---|---|---|
-| M5-02 session 真实实现 | 待复测 | 本地用桩 Key 验证签发/销毁/TTL；真实 Key 校验需真实模型地址 |
-| M5-08 七天真实端到端 | 待复测 | 桩链路连续 3 次通过（`test-results/metrics.json`）；V1/V4/V5 需真实模型重跑 |
-| M6-07 部署与版本校验 | 阻塞 | `scripts/deploy.mjs` 与 dry-run 就绪；preview 未上线，`smoke:remote` 未跑 |
+| M5-02 session 真实实现 | 已完成 | 真实 DeepSeek Key 在 preview 校验通过；session 返回 200，TTL 2 小时 |
+| M5-08 七天真实端到端 | 已完成 | 真实模型 3×7 通过：V1 3/3、P95 13135ms、单轮最高 0.050268 元（`test-results/metrics.json`） |
+| M6-07 部署与版本校验 | 已完成 | 2026-11-13 preview 上线：https://preview.ai-town-5ts.pages.dev；`npm run deploy:preview && npm run smoke:remote` 通过 |
 
-### 9.4 当前唯一外部阻塞（原 P0-2）
+### 9.4 部署记录（原 P0-2，已解决）
 
-| 需要提供 | 用途 |
+2026-11-13 完成 preview 部署，`smoke:remote` 通过。部署形态与资源如下（不含任何密钥）：
+
+| 项目 | 值 |
 |---|---|
-| Cloudflare Pages 项目名 | 静态资源发布 |
-| KV namespace id（preview / production 各一） | tick 占位、限流计数、幂等键、会话索引 |
-| `MODEL_BASE_URL` / `MODEL_NAME` | 真实模型调用与 `/v1/health` 连通性 |
-| `CLOUDFLARE_API_TOKEN` 或登录态 | 发布与远端冒烟 |
+| 静态站（Pages） | `ai-town` → https://preview.ai-town-5ts.pages.dev |
+| API（Worker） | `ai-town-api-preview` → https://ai-town-api-preview.ai-town-7e28.workers.dev |
+| 同源入口 | Pages Functions `functions/v1/[[path]].js` 把 `/v1/*` 代理到 Worker |
+| KV（preview） | `f136bdf91fde449bb2d749f72dc0ea4d` |
+| KV（production） | `37b2a877d7144bd2861e7f0e1b0b983d` |
+| 版本 | `/v1/health` → `1.0.0`，`model_reachable=true` |
+| 真实模型验证 | 3×7 通过：21 个 tick、285 次模型调用、总成本 0.138821 元（`test-results/metrics.json`） |
 
-提供后执行：`npm run deploy:preview && npm run smoke:remote`，再按 M5-08 重跑真实模型七天用例，回填 §6.1 的成本项与 §9.3 的两条“待复测”。
+复现命令：`npm run deploy:preview && npm run smoke:remote`。真实模型复测：`E2E_REMOTE=1 E2E_BASE_URL=https://preview.ai-town-5ts.pages.dev npm run test:e2e -- --grep "seven-days"`（`DEEPSEEK_API_KEY` 从本地 `.env.local` 读取）。凭据只存放在本地 `.env.local`（已 gitignore），未写入仓库。
+
+真实模型七天用例已于 2026-11-13 完成；后续迭代按 §12.3 主观评审流程执行。
+
+### 9.5 剧情质量评测记录（§12.3）
+
+**规则项（自动）**：`tests/contract/quality.test.js` 4 条用例通过（2026-11-13）。判定逻辑在 `tests/support/quality.js`，不参与运行时链路。
+
+| 规则 | 判定方式 | 覆盖 |
+|---|---|---|
+| 零信息开场 | 去掉标点与问候/寒暄用语后无剩余内容即零信息；超过 2 次判失败样本 | 正负向用例各 2 组 |
+| 每份小报 ≥1 条关系变化 | 关系版块须含 `x → y` 的数值变化（含负值） | 示例小镇 7 天逐日校验 |
+| 5 条 unsaid 各不相同且含细节 | 长度 ≥15 字且含专有名词 | 示例小镇 7 天逐日校验；缺条、重复、过短、无名词均有负向用例 |
+
+**主观项（人工）**：2026-11-13 完成首轮。样本为海边小镇模板 3 局 × 7 天，真实模型，局内记忆与关系连续；评审包见 `test-results/quality-review-real/summary.md`。
+
+| 局 | 评分 | 观察 |
+|---|---|---|
+| 第 1 局 | 能看 | 以菜市场为主，林小满/周秀兰高频 |
+| 第 2 局 | 能看 | 周秀兰与阿彪、苗苗的线更完整 |
+| 第 3 局 | 能看 | 第 3 天无人碰面，仍以菜市场对话为主 |
+
+结论：3/3「能看」，未达「想看下一集」。主要短板是场景与人物组合重复、头条句式单一。
+
+**评审中发现并修复**：C5 词表原先把 secret 的 2 字碎片（如「人的」「一个」「故事」）都当作敏感词，正常对话被大量替换成「……」。现已收紧为 5 字以上短语 + 专名/数量词，并补回归用例（`tests/unit/memory/secret-guard.test.js`）；重跑 3 局后文本恢复正常。

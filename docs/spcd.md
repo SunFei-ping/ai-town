@@ -1429,5 +1429,6 @@ flowchart TD
 | I3 | 本地运行时 | `scripts/dev-server.mjs` + `scripts/local-kv.mjs` 同时托管静态、分发 `/v1/*` 并模拟 KV | §13.3 原文建议 `wrangler dev` 或 `vercel dev` | 无外部凭据即可完整验证 M0–M6；线上仍用平台运行时 |
 | I4 | 示例小镇 | `data/sample-town/` 预渲染 7 天数据，首页直读 | §15 只要求示例镇可看，未规定数据形态 | 满足 V8（断网、0 次模型调用） |
 | I5 | 测试入口 | `scripts/run-tests.mjs` 把 `--grep` 翻译为 vitest `-t`；Playwright 直接跑 `tests/e2e` | 原文只规定测试框架，未规定入口 | 统一 §0.3 的 npm scripts 约定 |
+| I6 | Preview 同源入口 | Pages Functions `functions/v1/[[path]].js` 把 `/v1/*` 反向代理到独立发布的 Worker；静态仍在 Pages，前端相对路径不变 | §13.3 只规定静态与函数分别发布，未规定分离后的同源方案 | `workers.dev` 在部分网络被污染，同源代理避免 CORS 与 DNS 问题，也不改动任何 API 契约 |
 
 **回写规则**：后续任何实现偏差，先改本附录与对应章节，再改代码，不允许实现先偏离（与 task.md §7 回退原则一致）。

@@ -21,6 +21,17 @@ describe('secret 三级检测（secret-guard）', () => {
     expect(inspectText('老赵今天没来码头', [SECRET]).leaked).toBe(true);
   });
 
+  it('常用词不被当作敏感词，正常对话不误伤', () => {
+    const secrets = ['她记录别人的故事，是为了不写自己的。'];
+    const normal = '我跟你说，做买卖跟写文章一个道理，人的故事我听多了。';
+    expect(inspectText(normal, secrets).leaked).toBe(false);
+    expect(inspectText('她记录别人的故事，是为了不写自己的。', secrets).leaked).toBe(true);
+
+    const miao = '她把大人说的话都记在一个本子上，谁也不给看。';
+    expect(inspectText('回去也是一个人坐着，不如吹吹风。', [miao]).leaked).toBe(false);
+    expect(extractSecretTerms(miao)).not.toContain('一个');
+  });
+
   it('词表命中即拦截，默认重写后不再包含敏感词', async () => {
     const result = await guardText({
       text: '老赵，那三万块钱我下个月还你。',

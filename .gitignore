@@ -6,6 +6,7 @@ test-results/
 playwright-report/
 blob-report/
 .screenshots/
+.deploy/
 data/.tmp/
 data/.last-run.json
 
