@@ -1,8 +1,8 @@
-readme
 # AI小镇 · 作品提交
 
 ## 1. 作品本体
 
+- **GitHub 仓库**：https://github.com/SunFei-ping/ai-town
 - **在线 Demo**：https://preview.ai-town-5ts.pages.dev
 - **提交包**：`AI小镇-提交包.zip`（源码 + README + 文档 + 数据，解压后即可按 README 运行）
 - **本地运行**：见仓库根目录 `README.md`，执行 `npm install && npm run dev`，打开 http://127.0.0.1:4173

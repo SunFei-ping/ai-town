@@ -3,6 +3,7 @@
 一个**只能围观、不能指挥**的 AI 小镇：5 个居民，7 天，每天一份小报。你不玩它，你订阅它。
 
 - 在线 Demo：https://preview.ai-town-5ts.pages.dev
+- GitHub 仓库：https://github.com/SunFei-ping/ai-town
 - 图文教程：[docs/showcase/tutorial.html](docs/showcase/tutorial.html)（[PDF 版](AI小镇-图文教程.pdf)）
 - 示例镇零配置可看；要开自己的小镇，只需在页面里填自己的模型 API Key
 - 数据只存在浏览器本地；服务端不持久化居民设定、记忆与剧情正文
