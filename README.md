@@ -4,7 +4,7 @@
 
 - 在线 Demo：https://preview.ai-town-5ts.pages.dev
 - GitHub 仓库：https://github.com/SunFei-ping/ai-town
-- 图文教程：[docs/showcase/tutorial.html](docs/showcase/tutorial.html)（[PDF 版](AI小镇-图文教程.pdf)）
+- 图文教程（1521 字，带标签与目录）：[PDF 版](web/showcase/ai-town-tutorial.pdf)（[Word 版](web/showcase/ai-town-tutorial.docx)）
 - 示例镇零配置可看；要开自己的小镇，只需在页面里填自己的模型 API Key
 - 数据只存在浏览器本地；服务端不持久化居民设定、记忆与剧情正文
 
